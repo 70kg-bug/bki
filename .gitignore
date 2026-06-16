@@ -1,1 +1,5 @@
 setup_env.sh
+.venv
+instructions.md
+guidelines.md
+model_deploy.md
