@@ -1,0 +1,79 @@
+{
+  "cohort": {
+    "rows": 4200041,
+    "admissions": 39319
+  },
+  "warning": {
+    "row_rate": 0.05326567050178796,
+    "rows_positive": 223718,
+    "admissions_any": 33635,
+    "kind": "per-timestamp",
+    "note": "caregiver documentation flag; 84% reachable from charting pattern alone"
+  },
+  "nhsn_vac": {
+    "assessable_admissions": 12213,
+    "positive": 5690,
+    "rate_of_assessable": 0.4658969950053222,
+    "kind": "per-admission (day-anchored)",
+    "note": "published standard; protocol PDF already in bki/rag document/nhsn_vae_vap.pdf"
+  },
+  "support_escalation": {
+    "bins": 3548733,
+    "positive": 74370,
+    "bin_rate": 0.020956775277260926,
+    "admissions_any": 18032,
+    "kind": "per-timestamp, forward-looking",
+    "horizon_hours": 6
+  },
+  "desaturation": {
+    "bins": 3548733,
+    "positive": 103603,
+    "bin_rate": 0.02919436317130649,
+    "admissions_any": 8181,
+    "kind": "per-timestamp, forward-looking",
+    "horizon_hours": 6
+  },
+  "composite_deterioration": {
+    "bins": 3548733,
+    "positive": 283138,
+    "bin_rate": 0.07978565871256023,
+    "admissions_any": 24768,
+    "kind": "per-timestamp, forward-looking",
+    "horizon_hours": 6
+  },
+  "in_hospital_mortality": {
+    "positive": 7549,
+    "admission_rate": 0.19162816672589733,
+    "kind": "per-admission"
+  },
+  "icu_mortality": {
+    "positive": 5861,
+    "admission_rate": 0.14877900187845866,
+    "kind": "per-admission"
+  },
+  "mortality_28d": {
+    "positive": 8207,
+    "admission_rate": 0.20833121795197238,
+    "kind": "per-admission"
+  },
+  "mortality_90d": {
+    "positive": 10266,
+    "admission_rate": 0.26059806061836827,
+    "kind": "per-admission"
+  },
+  "prolonged_ventilation": {
+    "positive": 6140,
+    "admission_rate": 0.15586129867492513,
+    "kind": "per-admission"
+  },
+  "extubation_failure": {
+    "positive": 1898,
+    "admission_rate": 0.048179925877037115,
+    "kind": "per-admission"
+  },
+  "icu_readmission": {
+    "positive": 3877,
+    "admission_rate": 0.09841600243691932,
+    "kind": "per-admission"
+  }
+}

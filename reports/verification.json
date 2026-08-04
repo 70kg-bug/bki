@@ -1,0 +1,128 @@
+{
+  "faithfulness": {
+    "bq_rows": 1048575,
+    "bq_stays": 7393,
+    "local_rows": 4200041,
+    "local_stays": 39319,
+    "shared_stays": 6028,
+    "matched_keys": 672618,
+    "columns": {
+      "spo2": {
+        "both_present": 632361,
+        "agree": 632361,
+        "pct": 100.0
+      },
+      "fio2": {
+        "both_present": 150399,
+        "agree": 150392,
+        "pct": 99.99534571373479
+      },
+      "flow_rate": {
+        "both_present": 55540,
+        "agree": 55540,
+        "pct": 100.0
+      },
+      "peep": {
+        "both_present": 135311,
+        "agree": 135060,
+        "pct": 99.8145014078678
+      },
+      "pip": {
+        "both_present": 122025,
+        "agree": 122025,
+        "pct": 100.0
+      },
+      "respiratory_rate_total": {
+        "both_present": 117489,
+        "agree": 117486,
+        "pct": 99.99744656946608
+      },
+      "minute_volume": {
+        "both_present": 126009,
+        "agree": 126009,
+        "pct": 100.0
+      },
+      "tidal_volume_observed": {
+        "both_present": 131446,
+        "agree": 131446,
+        "pct": 100.0
+      },
+      "etco2": {
+        "both_present": 23766,
+        "agree": 23766,
+        "pct": 100.0
+      },
+      "inspiratory_ratio": {
+        "both_present": 35018,
+        "agree": 34902,
+        "pct": 99.6687417899366
+      },
+      "expiratory_ratio": {
+        "both_present": 35160,
+        "agree": 35160,
+        "pct": 100.0
+      }
+    },
+    "target_agreement_pct": 100.0
+  },
+  "parity": {
+    "rows": 40000,
+    "seconds_vectorised": 0.008531570434570312,
+    "seconds_original": 30.31088376045227,
+    "speedup": 3552.7906606304496,
+    "columns": {
+      "spo2_observed": 1.0,
+      "fio2_observed": 1.0,
+      "flow_rate_observed": 1.0,
+      "peep_observed": 1.0,
+      "pip_observed": 1.0,
+      "respiratory_rate_total_observed": 1.0,
+      "minute_volume_observed": 1.0,
+      "tidal_volume_observed_observed": 1.0,
+      "etco2_observed": 1.0,
+      "inspiratory_ratio_observed": 1.0,
+      "expiratory_ratio_observed": 1.0,
+      "spo2_locf": 1.0,
+      "fio2_locf": 1.0,
+      "flow_rate_locf": 1.0,
+      "peep_locf": 1.0,
+      "pip_locf": 1.0,
+      "respiratory_rate_total_locf": 1.0,
+      "minute_volume_locf": 1.0,
+      "tidal_volume_observed_locf": 1.0,
+      "etco2_locf": 1.0,
+      "inspiratory_ratio_locf": 1.0,
+      "expiratory_ratio_locf": 1.0,
+      "spo2_structurally_missing_in_stay": 1.0,
+      "fio2_structurally_missing_in_stay": 1.0,
+      "flow_rate_structurally_missing_in_stay": 1.0,
+      "peep_structurally_missing_in_stay": 1.0,
+      "pip_structurally_missing_in_stay": 1.0,
+      "respiratory_rate_total_structurally_missing_in_stay": 1.0,
+      "minute_volume_structurally_missing_in_stay": 1.0,
+      "tidal_volume_observed_structurally_missing_in_stay": 1.0,
+      "etco2_structurally_missing_in_stay": 1.0,
+      "inspiratory_ratio_structurally_missing_in_stay": 1.0,
+      "expiratory_ratio_structurally_missing_in_stay": 1.0,
+      "spo2_final": 1.0,
+      "fio2_final": 1.0,
+      "flow_rate_final": 1.0,
+      "peep_final": 1.0,
+      "pip_final": 1.0,
+      "respiratory_rate_total_final": 1.0,
+      "minute_volume_final": 1.0,
+      "tidal_volume_observed_final": 1.0,
+      "etco2_final": 1.0,
+      "inspiratory_ratio_final": 1.0,
+      "expiratory_ratio_final": 1.0
+    },
+    "delta_t_min_intentional_difference": true,
+    "all_identical": true
+  },
+  "leakage": {
+    "train_patients": 26436,
+    "test_patients": 6609,
+    "overlap": 0,
+    "dead_columns": []
+  }
+}
