@@ -45,7 +45,7 @@ services:
     build: ./engine_fcp
     container_name: vap_fcp_former
     volumes:
-      - ./output_from_advanced_training:/model:ro
+      - ./legacy/output_from_advanced_training:/model:ro
     deploy:
       resources:
         reservations:
@@ -69,7 +69,7 @@ services:
               capabilities: [gpu]
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
-      - ./lora_adapters:/lora_adapters:ro
+      - ./legacy/lora_adapters:/lora_adapters:ro
     networks:
       - vap-internal
 

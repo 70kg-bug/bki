@@ -1,5 +1,52 @@
+# --------------------------------------------------------------------------
+# Credentialed source data -- NEVER commit
+#
+# MIMIC-IV is distributed under a PhysioNet Data Use Agreement. Neither the raw
+# tables nor per-patient extracts derived from them may be redistributed. The
+# source tree (~97 GB) lives outside this repo at <workspace>/data.
+# --------------------------------------------------------------------------
+legacy/data/updated_cleaned_training_data/
+mimic-iv-3.1/
+raw-query.csv
+*-query.csv
+df_imputed.csv
+
+# --------------------------------------------------------------------------
+# Derived artifacts -- regenerable, and large
+#
+# The pipeline writes these to the workspace root, outside the repo:
+#   build/   ~420 MB of Parquet + manifests   models/  ~152 MB of fitted models
+# Ignored here as well, in case anyone points PM_BUILD_ROOT inside the repo.
+# --------------------------------------------------------------------------
+build/
+models/
+scratch/
+catboost_info/
+*.parquet
+*.ubj
+*.joblib
+
+# --------------------------------------------------------------------------
+# Python
+# --------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.ipynb_checkpoints/
+
+# --------------------------------------------------------------------------
+# Editor and OS noise
+# --------------------------------------------------------------------------
+~$*
+.DS_Store
+Thumbs.db
+
+# --------------------------------------------------------------------------
+# Deployment notes kept out of the repo (pre-existing)
+# --------------------------------------------------------------------------
 setup_env.sh
-.venv
 instructions.md
 guidelines.md
 model_deploy.md

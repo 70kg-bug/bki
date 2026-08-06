@@ -1,0 +1,121 @@
+{
+  "current method, exactly as it is": {
+    "average_precision": 0.08563300388890333,
+    "roc_auc": 0.6461489687503363,
+    "brier": 0.2399099505090066,
+    "positive_rate": 0.05263001021745169,
+    "rows": 3288,
+    "recipe": "pca2+scale+chain",
+    "seconds": 4.9
+  },
+  "+ scale before PCA (correct order)": {
+    "average_precision": 0.07669642856176659,
+    "roc_auc": 0.6141001030015166,
+    "brier": 0.24546580288862857,
+    "positive_rate": 0.05263001021745169,
+    "rows": 3288,
+    "recipe": "scale+pca2+chain",
+    "seconds": 4.9
+  },
+  "+ drop the 3-stage chain, use the classifier": {
+    "average_precision": 0.08325997331020635,
+    "roc_auc": 0.6395874442829124,
+    "brier": 0.23804358815126053,
+    "positive_rate": 0.05263001021745169,
+    "rows": 3288,
+    "recipe": "pca2+scale+gbc",
+    "seconds": 4.0
+  },
+  "PCA 3 components": {
+    "average_precision": 0.08606630313705553,
+    "roc_auc": 0.6353814371957256,
+    "brier": 0.2389090162172955,
+    "positive_rate": 0.05263001021745169,
+    "rows": 3288,
+    "recipe": "scale+pca3+chain",
+    "seconds": 5.7
+  },
+  "PCA 5 components": {
+    "average_precision": 0.08482967242460747,
+    "roc_auc": 0.6384836094717701,
+    "brier": 0.23816666646137366,
+    "positive_rate": 0.05263001021745169,
+    "rows": 3288,
+    "recipe": "scale+pca5+chain",
+    "seconds": 6.9
+  },
+  "PCA 8 components": {
+    "average_precision": 0.09736155841712629,
+    "roc_auc": 0.668466089632451,
+    "brier": 0.23446973314770594,
+    "positive_rate": 0.05263001021745169,
+    "rows": 3288,
+    "recipe": "scale+pca8+chain",
+    "seconds": 9.0
+  },
+  "PCA 11 = rotation only, no reduction": {
+    "average_precision": 0.09984771619726994,
+    "roc_auc": 0.6767746268640007,
+    "brier": 0.23196318289969892,
+    "positive_rate": 0.05263001021745169,
+    "rows": 3288,
+    "recipe": "scale+pca11+chain",
+    "seconds": 10.8
+  },
+  "no PCA at all": {
+    "average_precision": 0.12393316001295836,
+    "roc_auc": 0.7042460325018896,
+    "brier": 0.21902787791134273,
+    "positive_rate": 0.05263001021745169,
+    "rows": 3288,
+    "recipe": "scale+chain",
+    "seconds": 6.0
+  },
+  "no PCA + no chain": {
+    "average_precision": 0.1289821217440503,
+    "roc_auc": 0.7036064106529883,
+    "brier": 0.21959118601538913,
+    "positive_rate": 0.05263001021745169,
+    "rows": 3288,
+    "recipe": "scale+gbc",
+    "seconds": 4.6
+  },
+  "no PCA + no chain, 50k rows": {
+    "average_precision": 0.14370494899337344,
+    "roc_auc": 0.7180325891885666,
+    "brier": 0.21563724992098324,
+    "positive_rate": 0.05263001021745169,
+    "rows": 50000,
+    "recipe": "scale+gbc",
+    "seconds": 22.8
+  },
+  "no PCA + no chain, 359k rows": {
+    "average_precision": 0.1467089243647135,
+    "roc_auc": 0.720038380561444,
+    "brier": 0.21511636627067546,
+    "positive_rate": 0.05263001021745169,
+    "rows": 359148,
+    "recipe": "scale+gbc",
+    "seconds": 174.6
+  },
+  "no PCA + no chain, 55 features, 3,288 rows": {
+    "average_precision": 0.5014968229374717,
+    "roc_auc": 0.9315373959336835,
+    "brier": 0.11927935189698925,
+    "positive_rate": 0.05263001021745169,
+    "rows": 3288,
+    "recipe": "scale+gbc",
+    "features": 55,
+    "seconds": 8.5
+  },
+  "no PCA + no chain, 55 features, 50k rows": {
+    "average_precision": 0.5608677959464583,
+    "roc_auc": 0.9402471484819537,
+    "brier": 0.10825569158481593,
+    "positive_rate": 0.05263001021745169,
+    "rows": 50000,
+    "recipe": "scale+gbc",
+    "features": 55,
+    "seconds": 72.3
+  }
+}
