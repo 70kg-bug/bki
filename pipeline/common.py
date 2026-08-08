@@ -152,6 +152,15 @@ def _file_fingerprint(p: Path) -> str:
 
 
 def config_hash(*extra: Any) -> str:
+    """Fingerprint the settings a stage's output depends on.
+
+    The base payload is the extraction contract -- itemids, frozen parameters,
+    plausibility ranges, LOCF cutoff -- which every stage inherits. Anything a
+    single stage depends on is passed via `extra` instead of being added here,
+    because a value in the base payload invalidates EVERY manifest: putting a
+    label constant in it would force a re-scan of the 42 GB chartevents file
+    whenever a threshold moved. See config.FINGERPRINTS for the per-stage sets.
+    """
     payload = json.dumps({
         "cache_itemids": C.CACHE_ITEMIDS,
         "frozen": C.FROZEN_PARAMS,
@@ -163,10 +172,14 @@ def config_hash(*extra: Any) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 
-def write_manifest(name: str, *, sources: list[Path], output: Path, **fields: Any) -> None:
+def write_manifest(name: str, *, sources: list[Path], output: Path,
+                   extra: tuple[Any, ...] = (), **fields: Any) -> None:
     m = {
         "stage": name,
-        "config_hash": config_hash(),
+        "config_hash": config_hash(*extra),
+        # Recorded in the clear as well as hashed: when a stage re-runs
+        # unexpectedly, the diff should be readable without re-deriving it.
+        "config_extra": [str(e) for e in extra],
         "sources": {str(s): _file_fingerprint(s) for s in sources if s.exists()},
         "output": str(output),
         "output_bytes": output.stat().st_size if output.exists() else None,
@@ -176,7 +189,8 @@ def write_manifest(name: str, *, sources: list[Path], output: Path, **fields: An
     (C.MANIFEST_DIR / f"{name}.json").write_text(json.dumps(m, indent=2, default=str))
 
 
-def is_current(name: str, *, sources: list[Path], output: Path) -> bool:
+def is_current(name: str, *, sources: list[Path], output: Path,
+               extra: tuple[Any, ...] = ()) -> bool:
     """True when the stage's output exists and its inputs/config are unchanged."""
     mf = C.MANIFEST_DIR / f"{name}.json"
     if not (mf.exists() and output.exists()):
@@ -185,16 +199,22 @@ def is_current(name: str, *, sources: list[Path], output: Path) -> bool:
         m = json.loads(mf.read_text())
     except json.JSONDecodeError:
         return False
-    if m.get("config_hash") != config_hash():
+    if m.get("config_hash") != config_hash(*extra):
         return False
     want = {str(s): _file_fingerprint(s) for s in sources if s.exists()}
     return m.get("sources") == want
 
 
 @contextmanager
-def cached_stage(name: str, *, sources: list[Path], output: Path, force: bool = False):
-    """Skip the body when the output is already current. Yields True if it ran."""
-    if not force and is_current(name, sources=sources, output=output):
+def cached_stage(name: str, *, sources: list[Path], output: Path, force: bool = False,
+                 extra: tuple[Any, ...] = ()):
+    """Skip the body when the output is already current. Yields True if it ran.
+
+    `extra` is the stage's own config dependency (see config.FINGERPRINTS). A
+    stage that reads a tunable constant and does not declare it here will skip
+    itself after that constant changes, and the next run trains on stale data.
+    """
+    if not force and is_current(name, sources=sources, output=output, extra=extra):
         log(f"[yellow]SKIP[/yellow] {name} -- output current "
             f"({output.name}, {output.stat().st_size / 1e6:,.0f} MB)")
         yield False
@@ -208,8 +228,44 @@ def cached_stage(name: str, *, sources: list[Path], output: Path, force: bool = 
             output.unlink(missing_ok=True)
             log(f"[yellow]removed partial output {output.name}[/yellow]")
         raise
-    write_manifest(name, sources=sources, output=output)
+    write_manifest(name, sources=sources, output=output, extra=extra)
 
 
 def scan(path: Path) -> pl.LazyFrame:
     return pl.scan_parquet(path)
+
+
+# --------------------------------------------------------------------------
+# Forward labels
+#
+# A forward label is deliberately NOT a column of the model matrix -- it
+# describes the future, and anything sitting in that file is reachable as a
+# feature. It lives in targets_forward.parquet and is joined here, by both the
+# trainer and the target comparison, so there is one implementation of the
+# alignment and one place for its correctness argument.
+# --------------------------------------------------------------------------
+def align_forward_labels(n_rows: int) -> pl.DataFrame:
+    """Join the forward labels onto model-matrix row order.
+
+    An explicit row index and a re-sort, rather than trusting the join to preserve
+    order -- silently misaligned labels would be undetectable downstream.
+    """
+    keys = (pl.read_parquet(C.MODEL_MATRIX_PQ, columns=["stay_id", "charttime"])
+              .with_row_index("_i"))
+    tf = pl.read_parquet(C.FORWARD_TARGETS_PQ)
+    j = keys.join(tf, on=["stay_id", "charttime"], how="left").sort("_i")
+    assert j.height == n_rows == keys.height, (
+        f"forward-label join changed the row count: {keys.height:,} -> {j.height:,} "
+        "-- (stay_id, charttime) is not unique somewhere")
+    return j
+
+
+def forward_label_columns() -> list[str]:
+    """Every column of targets_forward.parquet except the join keys.
+
+    Used by the leakage guards: none of these may ever appear in a feature set.
+    """
+    if not C.FORWARD_TARGETS_PQ.exists():
+        return []
+    return [c for c in parquet_columns(C.FORWARD_TARGETS_PQ)
+            if c not in ("stay_id", "charttime")]

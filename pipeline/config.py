@@ -60,13 +60,17 @@ PATIENTS = mimic_csv("hosp", "patients")
 ADMISSIONS = mimic_csv("hosp", "admissions")
 DIAGNOSES_ICD = mimic_csv("hosp", "diagnoses_icd")
 TRANSFERS = mimic_csv("hosp", "transfers")
+# Height and weight. 306 MB, so reading it costs nothing next to chartevents'
+# 40 GB, and it keeps Table 1 on a single provenance path -- raw MIMIC through
+# s02 -- rather than mixing in a BigQuery export with a different cohort.
+OMR = mimic_csv("hosp", "omr")
 
 MIMIC_TABLES = {
     "icu/chartevents": CHARTEVENTS, "icu/icustays": ICUSTAYS,
     "icu/procedureevents": PROCEDUREEVENTS, "icu/inputevents": INPUTEVENTS,
     "icu/d_items": D_ITEMS, "hosp/patients": PATIENTS,
     "hosp/admissions": ADMISSIONS, "hosp/diagnoses_icd": DIAGNOSES_ICD,
-    "hosp/transfers": TRANSFERS,
+    "hosp/transfers": TRANSFERS, "hosp/omr": OMR,
 }
 
 
@@ -86,8 +90,17 @@ def require_mimic() -> None:
         )
 
 
-# Reference export used to verify the local extract reproduces BigQuery semantics.
+# Reference exports used to verify the local extract reproduces BigQuery
+# semantics. Neither is a pipeline INPUT -- the pipeline reads raw MIMIC and
+# these say whether it read it correctly.
+#   raw-query.csv        -- the frozen eleven, per (stay_id, charttime)
+#   static-demographic-  -- Table 1: gender, race, the 17 Charlson categories
+#     query.csv             and the index. Its comorbidity flags agree with
+#                           ours on 100.00% of joined admissions; its Charlson
+#                           INDEX does not, which is how the scoring defects in
+#                           charlson.py were found.
 BQ_EXPORT = DATA_ROOT / "raw-query.csv"
+BQ_STATIC_EXPORT = DATA_ROOT / "static-demographic-query.csv"
 
 # Pipeline outputs. Derived and large -- deliberately outside the repo.
 BUILD = Path(os.getenv("PM_BUILD_ROOT", WORKSPACE / "build"))
@@ -209,10 +222,26 @@ EXTRA_CACHED_ITEMS: dict[str, int] = {
     "ventilator_mode": 223849,
     "ventilator_type": 223848,
     "o2_delivery_device": 226732,
+    # Body metrics -- static per admission, but only chartevents records them
+    # for ICU patients. hosp/omr was tried first and reaches just 51.5% of the
+    # cohort, because omr is an OUTPATIENT record: a stay has a row there only
+    # if the patient also had clinic care at this hospital. That missingness
+    # is a care-continuity signal, which is precisely the documentation
+    # confound this whole target switch exists to escape. Charted admission
+    # weight has no such structure.
+    "admission_weight_kg": 226512,
+    "admission_weight_lb": 226531,
+    "daily_weight_kg": 224639,
+    "height_cm_item": 226730,
+    "height_in_item": 226707,
 }
 CACHE_ITEMS: dict[str, int] = {**FROZEN_PARAMS, **EXTRA_CACHED_ITEMS}
 CACHE_ITEMIDS: list[int] = sorted(set(CACHE_ITEMS.values()))
 ITEMID_TO_NAME: dict[int, str] = {v: k for k, v in CACHE_ITEMS.items()}
+
+# Read by s02 out of the cache, in preference order within each metric.
+BODY_WEIGHT_ITEMIDS = {226512: 1.0, 224639: 1.0, 226531: 0.45359237}  # -> kg
+BODY_HEIGHT_ITEMIDS = {226730: 1.0, 226707: 2.54}                     # -> cm
 
 # Items whose payload is text rather than a number (valuenum is null for these).
 TEXT_ITEMIDS = {223849, 223848, 226732}
@@ -246,13 +275,83 @@ FIO2_FRACTION_MAX = 1.0
 LOCF_CUTOFF_MIN = 240.0  # a setting from >4h ago is not "current"
 SUFFIXES = ("_observed", "_delta_t_min", "_locf", "_structurally_missing_in_stay", "_final")
 
+
+def _flag(name: str, default: bool) -> bool:
+    """Env-overridable boolean, so the gate harness can rebuild any prior state."""
+    return os.getenv(name, "1" if default else "0") == "1"
+
+
+# --------------------------------------------------------------------------
+# Table 1 (static) -- see s02_table1_static.py
+#
+# S02_FINAL_COHORT: s02 used to build Table 1 from the STRICT cohort (31,969
+# admissions) while s05 onward used the FINAL cohort (39,394). s10 left-joins
+# them, so 7,423 admissions -- 946,390 rows, 22.53% of the model matrix --
+# carried NULL across all 33 static features, and no assertion noticed.
+#
+# That is worse than missing data. `gender IS NULL` was a bit-exact, 100%
+# accurate indicator of `cohort_source = 'evidence'`, a stratum whose label
+# prevalence differs sharply from the strict cohort's. The model had a free,
+# perfectly reliable cohort-membership feature. Building Table 1 on the final
+# cohort fills the block from the same source and removes the shortcut.
+#
+# CHARLSON_HIERARCHY: standard Charlson counts only the higher member of each
+# graded pair (mild/severe liver, uncomplicated/complicated diabetes,
+# malignancy/metastatic). charlson.py summed both, inflating the index.
+#
+# STATIC_BODY_METRICS: height and weight out of the chartevents cache, plus
+# the predicted body weight derived from them -- which is what makes tidal
+# volume comparable between patients. hosp/omr was the obvious source and is
+# the wrong one: it reaches 51.5% of the cohort against 99.3% for charted
+# admission weight, and its missingness tracks whether the patient also had
+# outpatient care here.
+# --------------------------------------------------------------------------
+S02_FINAL_COHORT = _flag("PM_S02_FINAL_COHORT", True)
+CHARLSON_HIERARCHY = _flag("PM_CHARLSON_HIERARCHY", True)
+STATIC_BODY_METRICS = _flag("PM_STATIC_BODY_METRICS", True)
+
+# Dobutamine is an inotrope, not a vasopressor, but it sat in the vasopressor
+# regex. Splitting it into its own group corrects both the `d_vaso` label arm
+# and the `vasopressor_*` features without discarding the drug.
+SPLIT_INOTROPE = _flag("PM_SPLIT_INOTROPE", True)
+
+# Tidal volume as mL/kg predicted body weight -- the ARDSNet lung-protective
+# quantity. Absolute mL means different things in a 150 cm and a 190 cm
+# patient, so the raw column is not comparable across patients and this is.
+ENABLE_PBW = _flag("PM_ENABLE_PBW", True)
+
 # --------------------------------------------------------------------------
 # Modelling
+#
+# THE TARGET IS NO LONGER `warning`. The group approved the switch to composite
+# deterioration; see the forward-targets block below for the label itself.
+#
+# `warning` is still built and still lands in the model matrix, because
+# verify.py diffs it against the BigQuery export to prove the extract is
+# faithful. It is excluded from every feature set by name -- see LEGACY_TARGET
+# and the guards in s10_assemble / verify.
+#
+# TARGET_SOURCE says WHERE the label lives:
+#   "matrix"  -- a column of model_matrix.parquet (how `warning` worked)
+#   "forward" -- a column of targets_forward.parquet, joined at training time
+# A forward label must never be reachable as a feature, so it is deliberately
+# kept out of the model matrix and joined on (stay_id, charttime) instead.
 # --------------------------------------------------------------------------
-TARGET = "warning"
+
+
 GROUP_KEY = "subject_id"   # patient, NOT stay -- one patient can have several stays
 N_FOLDS = 5
 RANDOM_SEED = 42
+
+LEGACY_TARGET = "warning"  # kept as a column for verification; never a feature
+
+PRIMARY_HORIZON_H = 6      # of HORIZONS_H below; 2 and 12 justify the choice
+
+# The trained label. Respiratory arm only: the circulatory arm is computed and
+# reported beside it, but 29.1% of the four-arm label's positives were
+# circulatory-only, and this is a ventilation monitor.
+TARGET = os.getenv("PM_TARGET", f"y_resp_{PRIMARY_HORIZON_H}h")
+TARGET_SOURCE = "matrix" if TARGET == LEGACY_TARGET else "forward"
 
 # --------------------------------------------------------------------------
 # Forward-looking targets (stage 14) -- candidate D, composite deterioration
@@ -269,7 +368,6 @@ RANDOM_SEED = 42
 FORWARD_TARGETS_PQ = BUILD / "targets_forward.parquet"
 
 HORIZONS_H = (2, 6, 12)      # 6 is trained; 2 and 12 justify the choice
-PRIMARY_HORIZON_H = 6
 
 D_FIO2_RISE = 20.0           # percentage points above the setting in force
 D_PEEP_RISE = 3.0            # cmH2O above the setting in force
@@ -279,6 +377,31 @@ STRICT_BASELINE_AGE_MIN = 60.0  # `y_strict`: escalation judged only against a f
 # Baselines come from the LOCF value (the setting currently in force, capped at
 # LOCF_CUTOFF_MIN) because that is what a clinician actually sees. Forward values
 # must be MEASURED, never imputed -- an event has to be observed to count.
+
+# ---- Tightenings, from the component audit -------------------------------
+#
+# The audit found two of the four arms substantially artifact:
+#
+#   FiO2 -- 53.9% of escalations land at exactly 100% and 48.4% are already
+#   back near baseline by the next reading. Both signatures are the same
+#   event: pre-oxygenation before endotracheal suctioning. A transient spike
+#   is not deterioration, so the rise must still be there at the next MEASURED
+#   reading. One mechanism kills both signatures.
+#
+#   Vasopressor -- only 21.4% of flips are the stay's first pressor and 58.4%
+#   are restarts within 4 h. MIMIC chunks one continuous infusion into ~14.9
+#   distinct start times, so "not running now, running later" fires on pauses.
+#   A flip counts only if it is the stay's first or follows a real off-period.
+#
+# Both default ON. Turn off via env to reproduce the pre-tightening label.
+D_FIO2_PERSIST = _flag("PM_D_FIO2_PERSIST", True)
+D_VASO_STRICT = _flag("PM_D_VASO_STRICT", True)
+D_VASO_OFF_MIN = 360.0       # 6 h off before a restart counts as a new event
+
+# Prevalence sanity bound asserted in s14. The respiratory arm alone is
+# materially rarer than the four-arm composite, so the floor is lower than the
+# 0.02 that suited the composite.
+D_PREVALENCE_BOUNDS = (0.005, 0.35)
 
 # --------------------------------------------------------------------------
 # Calibration (stage 13)
@@ -303,13 +426,233 @@ SERVING_THRESHOLD = 0.70   # the constant in bki/backend/main.py:85
 ALERT_BUDGETS = (1.0, 2.0, 4.0)
 ALERT_DEDUP_MINUTES = 60   # rows are irregularly spaced; count alert-hours, not rows
 
-MODEL_XGB = MODELS / "xgboost_warning.ubj"
-MODEL_LGB = MODELS / "lightgbm_warning.txt"
-CALIBRATOR_PKL = MODELS / "calibrator.joblib"
-OPERATING_POINT_JSON = MODELS / "operating_point.json"
+# Named for the label they were fitted on. Every band and threshold is a
+# property of (model, label, cohort), so a model file that does not say which
+# label it predicts is a loaded gun. The `warning` artifacts stay on disk
+# alongside these, which is what makes the switch reversible without a retrain.
+MODEL_XGB = MODELS / f"xgboost_{TARGET}.ubj"
+MODEL_LGB = MODELS / f"lightgbm_{TARGET}.txt"
+CALIBRATOR_PKL = MODELS / f"calibrator_{TARGET}.joblib"
+OPERATING_POINT_JSON = MODELS / f"operating_point_{TARGET}.json"
+
+# --------------------------------------------------------------------------
+# Risk bands -- the pipeline's OUTPUT CONTRACT
+#
+# The four labels are consumed downstream by the LLM + RAG explanatory layer, so
+# they are an interface, not a badge colour. An LLM handed the bare string "HIGH"
+# invents what HIGH means and sounds confident doing it, which is why the band
+# ships with its measured event rate and the envelope that rate is allowed to
+# occupy. See pipeline/bands.py for the machine and s16_bands.py for the fit.
+#
+# Renaming a band is expensive once prompts and RAG retrieval keys are built on
+# it; adding a field is cheap. These names are final.
+# --------------------------------------------------------------------------
+BAND_NAMES = ("LOW", "MEDIUM", "HIGH", "CRITICAL")
+# 1.1.0 -- `contributors` went from a reserved slot to a specified field when
+# s17_records began emitting it. Additive, so a minor bump.
+# 1.2.0 -- `imputed_share`, `attribution_age_min` and `attribution_total` added,
+# so a consumer can decide whether a reading is fit to explain at all. The two
+# shares are taken over the same denominator as `documentation_share` on
+# disjoint feature sets; `attribution_total` IS that denominator, so a consumer
+# holding only the top-8 can still express one contributor as a share of the
+# whole decision. All three need the full 110-column contribution matrix, which
+# exists only inside s17.
+RISK_SCHEMA_VERSION = "1.2.0"
+BAND_TABLE_JSON = MODELS / f"risk_bands_{TARGET}.json"
+
+# Emitted records carry per-patient MIMIC values keyed to stay_id, so they are
+# DUA-covered and belong in build/ (gitignored, outside the repo) -- NEVER in
+# reports/, which is tracked. reports/records.json gets aggregates only.
+# JSONL rather than Parquet: the record is a nested contract, not a table, and
+# its consumer builds prompts one record at a time. Gzipped, so a golden set
+# stays around 15 MB on a machine with little headroom.
+RECORDS_JSONL = BUILD / "risk_records.jsonl.gz"
+RECORD_SAMPLE_STAYS = 500   # ~70k records; a golden set for prompt work, not a dump
+CONTRIB_TOP_K = 8           # contributors kept per reading, by |attribution|
+
+# sigmoid(sum(contribs) + bias) against the score the record reports. Measured
+# max discrepancy is 1.2e-06, from two float32 sources that XGBoost gives no way
+# around: summing 110 float32 SHAP terms (9.7e-07) and the float32 probability
+# round-trip through logit that Scorer.score performs to stay bit-identical with
+# s13 (5.3e-07). Neither is a modelling error.
+#
+# The bound is set by what it has to guarantee, not by what makes the assertion
+# pass: at 1e-05 it is ~3,000x smaller than the tightest feature of the band
+# table (the 0.0313 gap between the MEDIUM cut and its deadband floor), so a
+# reconstruction discrepancy can never move a band.
+CONTRIB_RECON_TOL = 1e-5
+
+# --------------------------------------------------------------------------
+# THE EXPLANATION LAYER -- s18
+#
+# Display names and units for the frozen eleven. FROZEN_PARAMS is name -> itemid
+# and nothing else in this pipeline knows that peep is cmH2O, which is fine for
+# a model and useless for a sentence a clinician reads. ASCII on purpose: these
+# strings reach a Windows console.
+# --------------------------------------------------------------------------
+PARAM_DISPLAY: dict[str, tuple[str, str, int]] = {
+    "spo2":                   ("SpO2", "%", 0),
+    "fio2":                   ("FiO2", "%", 0),
+    "flow_rate":              ("flow rate", "L/min", 1),
+    "peep":                   ("PEEP", "cmH2O", 0),
+    "pip":                    ("PIP", "cmH2O", 0),
+    "respiratory_rate_total": ("respiratory rate", "/min", 0),
+    "minute_volume":          ("minute volume", "L/min", 1),
+    "tidal_volume_observed":  ("tidal volume", "mL", 0),
+    "etco2":                  ("EtCO2", "mmHg", 0),
+    "inspiratory_ratio":      ("I:E inspiratory part", "", 1),
+    "expiratory_ratio":       ("I:E expiratory part", "", 1),
+}
+
+# LEGAL: when a reading does not clear the data floor, Pulsemind says so rather
+# than explaining it. Degrade explicitly -- never emit a synthesised rationale in
+# a slot that is meant to signal absence.
+INSUFFICIENT_DATA_TEXT = "Insufficient data"
+# A DIFFERENT condition, and not a data problem: the reading is fit to explain
+# and the generator is down. Band, risk, telemetry and contributors all still
+# emit; only the narrative is withheld.
+EXPLANATION_UNAVAILABLE_TEXT = (
+    "LLM explanation and recommendations are not available")
+
+# --------------------------------------------------------------------------
+# The data-sufficiency floor -- MEASURED, not chosen.
+#
+# Both signals are shares of the same |attribution| denominator over disjoint
+# feature sets (see s17_records): imputed_share is the part of the score that
+# came from cohort defaults this patient never had, documentation_share the part
+# that came from charting behaviour rather than physiology. Above either
+# threshold the score is not substantially an assessment of this patient.
+#
+# On the golden set this suppresses 6.7% of readings -- LOW 8.1%, MEDIUM 3.4%,
+# HIGH 2.8%, CRITICAL 0.5% -- and the suppressed readings carry 0.41x the
+# forward-label prevalence of the kept ones. It removes the uninformative, not
+# the sick. No admission is suppressed in full; the median stay loses 1.2%.
+#
+# !! THERE IS DELIBERATELY NO STALENESS GATE. `attribution_age_min` is in the
+# record and reads like an obvious third condition -- a score driven by values
+# two days old is not a current assessment. Measured, it is the opposite:
+# readings with attribution_age > 2880 min carry 1.38x the label prevalence of
+# the rest, so gating on staleness would suppress readings at ABOVE the base
+# deterioration rate. Staleness is DISCLOSED instead -- every parameter carries
+# its own age_min into the payload -- and never gated.
+# --------------------------------------------------------------------------
+SUFFICIENCY_MAX_IMPUTED_SHARE = 0.30
+SUFFICIENCY_MAX_DOC_SHARE = 0.30
+
+EXPLANATIONS_JSONL = BUILD / "explanations.jsonl.gz"   # DUA -- build/, not reports/
+EXPLAIN_SCHEMA_VERSION = "1.0.0"
+EXPLAIN_CONTRIBUTOR_K = 5      # contributors rendered into the payload, of CONTRIB_TOP_K
+EXPLAIN_MUTATION_SAMPLE = 200  # records the adversarial self-check runs over
+
+# Each cut is solved to an alert budget counted in PROMOTION EVENTS per
+# ventilated patient-day -- a patient held at HIGH for six hours is one alert,
+# not six, and interruptions are what alarm fatigue is about. s13 counts
+# occupancy instead, which is why its published cuts and these differ.
+#
+# These are NOT ALERT_BUDGETS. Changing the unit from occupancy-hours to
+# promotion events changes the achievable range with it: measured on the
+# calibration fold, the promotion rate peaks near 1.0 per patient-day at ANY
+# boundary and falls away on both sides, so budgets of 1/2/4 are unreachable --
+# no cut produces four escalations a day. Reusing them made every cut collapse
+# to the grid floor and put 97% of readings in HIGH or CRITICAL.
+#
+# Descending, because the cuts ascend in severity: MEDIUM is the loosest floor
+# and CRITICAL the tightest. Read as "escalate a patient into this band at most
+# this many times per ventilated patient-day".
+BAND_PROMOTION_BUDGETS = (0.70, 0.45, 0.20)   # MEDIUM / HIGH / CRITICAL
+BAND_GRID_POINTS = 400            # cut-search resolution, matching s13's grid
+
+# A monitor whose top band is not rare is not a monitor. Asserted on the
+# displayed band, which is what a clinician sees.
+BAND_MIN_LOW_SHARE = 0.50
+
+# Hysteresis sweep. Measured, not chosen: s16 evaluates every combination and
+# picks by BAND_MAX_LOST_LEAD_MIN below. promote_min_readings is derived rather
+# than swept -- 1 when no dwell is asked for (the no-hysteresis reference), else
+# 2, so a single reading cannot satisfy a dwell purely by sitting next to a long
+# gap in the charting.
+BAND_PROMOTE_DWELL_MIN = (0.0, 30.0, 60.0)
+BAND_DEMOTE_MARGIN_FRAC = (0.0, 0.25, 0.5)   # of the gap down to the band below
+BAND_DEMOTE_DWELL_MIN = (0.0, 60.0, 120.0)
+
+# Selection rule, stated as constants so the choice is reproducible rather than
+# eyeballed: at a fixed promotion budget, take the configuration that DETECTS
+# most, subject to a cap on lost warning time and on added flicker.
+#
+# Selecting on flips directly looks obvious and is wrong. Each configuration
+# re-solves its cuts to hold the budget, and hysteresis suppresses
+# re-promotions, so it meets the same budget at a LOWER cut -- measured, 0.1693
+# against 0.2415 for the MEDIUM floor. A lower cut is crossed more often, so
+# flips rise even though the machine is doing its job. The flicker claim is
+# tested separately, at FIXED cuts, where it is not confounded.
+BAND_MAX_LOST_LEAD_MIN = 30.0
+BAND_MAX_FLIP_INCREASE = 0.25     # vs the no-hysteresis reference
+
+# A band's observed rate must stay inside [CI_lo - tol, CI_hi + tol] measured on
+# the calibration fold. A retrain that moves HIGH's real rate outside its
+# envelope fails the build instead of quietly changing what the explanatory
+# layer is told HIGH means.
+BAND_RATE_TOLERANCE = 0.02
+
+# Ratchet guard. Holding the top band longer than the raw score sits above its
+# cut is not a defect -- it is exactly what demote-slow does, and measured here
+# it inflates CRITICAL occupancy 1.9x. The failure mode worth catching is
+# UNBOUNDED holding: a band that absorbs patients, so a long stay ends up
+# permanently red.
+#
+# So the test is not the inflation ratio itself but whether that ratio GROWS
+# with stay length. Comparing displayed against instant occupancy within each
+# stay-length quartile controls for the fact that longer stays are sicker and
+# would legitimately spend more time in the top band anyway.
+BAND_MAX_RATCHET = 1.5      # ratio in the longest quartile vs the shortest
+
+# ILLUSTRATIVE deployment profile, recorded in the artifact so that a dwell
+# fitted on MIMIC's grid is never mistaken for one fitted on the bedside grid.
+# A live ventilator feed samples far faster than MIMIC charts -- these numbers
+# stand in for that gap; they are not a commitment to any particular rate. The
+# caveat they carry holds for any deployment grid finer than the charting one:
+# the dwell has to be re-expressed, and the documentation features degenerate.
+BAND_DEPLOY_HZ = 1.0
+BAND_DEPLOY_PROMOTE_SEC = 10.0
 
 # GPU: RTX 5060 (Blackwell sm_120), 8 GB VRAM with ~6.5 GB usable.
 # Keep max_bin low so the quantised matrix stays comfortably inside VRAM.
 GPU_MAX_BIN = 64
 USE_GPU = os.getenv("PM_USE_GPU", "1") == "1"
 N_CPU_THREADS = int(os.getenv("PM_THREADS", "30"))
+
+# --------------------------------------------------------------------------
+# Per-stage cache fingerprints
+#
+# common.config_hash() hashes the extraction contract, which every stage
+# inherits. Anything ONE stage depends on belongs here instead, passed as
+# `extra=` to cached_stage, because a constant added to the base payload
+# invalidates every manifest -- including s03's, which would re-scan 40 GB of
+# chartevents because a label threshold moved.
+#
+# The rule: if a stage reads a constant and that constant is not in its
+# fingerprint, changing it makes the stage SKIP and the pipeline silently
+# serves stale data. That defect shipped once; these tuples are the fix.
+# --------------------------------------------------------------------------
+FP_STATIC = (S02_FINAL_COHORT, CHARLSON_HIERARCHY, STATIC_BODY_METRICS)
+FP_INTERVENTIONS = (SPLIT_INOTROPE,)
+FP_FORWARD = (HORIZONS_H, D_FIO2_RISE, D_PEEP_RISE, D_SPO2_BELOW,
+              STRICT_BASELINE_AGE_MIN, D_FIO2_PERSIST, D_VASO_STRICT,
+              D_VASO_OFF_MIN)
+FP_MATRIX = (TARGET, TARGET_SOURCE, LEGACY_TARGET, ENABLE_PBW)
+FP_CALIBRATE = FP_MATRIX + (ALERT_BUDGETS, ALERT_DEDUP_MINUTES,
+                            EARLY_STOP_FOLD, CALIB_FOLD, TRAIN_FOLDS)
+FP_COMPARE = (TARGET, PRIMARY_HORIZON_H, STRICT_BASELINE_AGE_MIN)
+FP_BANDS = FP_CALIBRATE + (BAND_NAMES, BAND_PROMOTION_BUDGETS,
+                           RISK_SCHEMA_VERSION, BAND_GRID_POINTS,
+                           BAND_PROMOTE_DWELL_MIN, BAND_DEMOTE_MARGIN_FRAC,
+                           BAND_DEMOTE_DWELL_MIN, BAND_MAX_LOST_LEAD_MIN,
+                           BAND_MAX_FLIP_INCREASE, BAND_RATE_TOLERANCE,
+                           BAND_MAX_RATCHET, BAND_MIN_LOW_SHARE,
+                           LOCF_CUTOFF_MIN)
+FP_RECORDS = FP_BANDS + (RECORD_SAMPLE_STAYS, CONTRIB_TOP_K, CONTRIB_RECON_TOL)
+FP_EXPLAIN = FP_RECORDS + (EXPLAIN_SCHEMA_VERSION, EXPLAIN_CONTRIBUTOR_K,
+                           EXPLAIN_MUTATION_SAMPLE, INSUFFICIENT_DATA_TEXT,
+                           EXPLANATION_UNAVAILABLE_TEXT,
+                           SUFFICIENCY_MAX_IMPUTED_SHARE,
+                           SUFFICIENCY_MAX_DOC_SHARE, tuple(PARAM_DISPLAY.items()))
