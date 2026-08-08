@@ -1,150 +1,154 @@
 {
   "lightgbm": {
-    "average_precision": 0.6393421656118401,
-    "roc_auc": 0.9505741511103767,
-    "brier": 0.07704597548443938,
-    "positive_rate": 0.05263001021745169,
-    "train_seconds": 400.9,
-    "features": 102,
+    "average_precision": 0.4154330411272414,
+    "roc_auc": 0.7859097182756501,
+    "brier": 0.14299279460665862,
+    "positive_rate": 0.08326108986303161,
+    "train_seconds": 142.5,
+    "features": 109,
     "params_source": "tuned",
-    "inference_us_per_row": 32.65
+    "inference_us_per_row": 9.65
   },
   "xgboost": {
-    "average_precision": 0.6395351145804923,
-    "roc_auc": 0.9512286560443266,
-    "brier": 0.08035921305418015,
-    "positive_rate": 0.05263001021745169,
-    "train_seconds": 97.3,
-    "features": 102,
+    "average_precision": 0.41552326715506366,
+    "roc_auc": 0.7860014034111393,
+    "brier": 0.1586088240146637,
+    "positive_rate": 0.08326108986303161,
+    "train_seconds": 31.0,
+    "features": 109,
     "params_source": "tuned",
-    "inference_us_per_row": 3.76
+    "inference_us_per_row": 1.67
   },
   "new": {
-    "average_precision": 0.6395351145804923,
-    "roc_auc": 0.9512286560443266,
-    "brier": 0.08035921305418015,
-    "positive_rate": 0.05263001021745169,
-    "train_seconds": 97.3,
-    "features": 102,
+    "average_precision": 0.41552326715506366,
+    "roc_auc": 0.7860014034111393,
+    "brier": 0.1586088240146637,
+    "positive_rate": 0.08326108986303161,
+    "train_seconds": 31.0,
+    "features": 109,
     "params_source": "tuned",
-    "inference_us_per_row": 3.76,
+    "inference_us_per_row": 1.67,
     "algorithm": "xgboost"
   },
   "doc_only": {
-    "average_precision": 0.5383697240844223,
-    "roc_auc": 0.927837710038586,
-    "brier": 0.1088533956080512,
-    "positive_rate": 0.05263001021745169
+    "average_precision": 0.145449065398012,
+    "roc_auc": 0.6283282467725853,
+    "brier": 0.23120752534813246,
+    "positive_rate": 0.08326108986303161
   },
   "baseline_small": {
-    "average_precision": 0.08563300388890333,
-    "roc_auc": 0.6461489687503363,
-    "brier": 0.2399099505090066,
-    "positive_rate": 0.05263001021745169,
-    "train_seconds": 5.3,
+    "average_precision": 0.16308786140185666,
+    "roc_auc": 0.645916459111776,
+    "brier": 0.23451572554442807,
+    "positive_rate": 0.08326108986303161,
+    "train_seconds": 5.1,
     "train_rows": 3288
   },
   "baseline_scaled": {
-    "average_precision": 0.09203200875540096,
-    "roc_auc": 0.6625264009629177,
-    "brier": 0.23452975976776275,
-    "positive_rate": 0.05263001021745169,
-    "train_seconds": 274.5,
-    "train_rows": 359148
+    "average_precision": 0.18031796556647978,
+    "roc_auc": 0.6594555120091942,
+    "brier": 0.22676011809009597,
+    "positive_rate": 0.08326108986303161,
+    "train_seconds": 429.1,
+    "train_rows": 500000
   },
   "bootstrap": {
     "xgboost_vs_lightgbm": {
-      "mean": 0.00018866454222944584,
-      "lo": -0.0009904091536599186,
-      "hi": 0.0014021933426607747,
-      "p_worse": 0.415
+      "mean": 6.348358318550129e-05,
+      "lo": -0.002507181417641892,
+      "hi": 0.0020938911017592656,
+      "p_worse": 0.475,
+      "resamples": 200
     },
     "new_vs_baseline_small": {
-      "mean": 0.5541372901001667,
-      "lo": 0.5477808420187182,
-      "hi": 0.5608810921320705,
-      "p_worse": 0.0
+      "mean": 0.2529930500871015,
+      "lo": 0.24190180211186638,
+      "hi": 0.26535314536974197,
+      "p_worse": 0.0,
+      "resamples": 200
     },
     "new_vs_baseline_scaled": {
-      "mean": 0.5477695588640341,
-      "lo": 0.5415152687924284,
-      "hi": 0.5547536266839693,
-      "p_worse": 0.0
+      "mean": 0.2357463463147627,
+      "lo": 0.22485115591825228,
+      "hi": 0.24671715955845525,
+      "p_worse": 0.0,
+      "resamples": 200
     },
     "new_vs_doc_only": {
-      "mean": 0.1012232260020952,
-      "lo": 0.09701687828595065,
-      "hi": 0.1056988085744372,
-      "p_worse": 0.0
+      "mean": 0.27073626376456505,
+      "lo": 0.2580476814783022,
+      "hi": 0.28347602752679735,
+      "p_worse": 0.0,
+      "resamples": 200
     }
   },
   "shap": {
     "by_group": {
-      "t1_static": 0.10000203549861908,
-      "t2_timeseries": 0.8226085305213928,
-      "t3_interventions": 0.07738930732011795
+      "t1_static": 0.2167111039161682,
+      "t2_timeseries": 0.6888769865036011,
+      "t3_interventions": 0.09441173076629639
     },
-    "documentation_share": 0.6967217922210693,
+    "documentation_share": 0.1253170520067215,
     "top_features": [
       [
-        "fio2_observed",
-        1.8759459257125854
-      ],
-      [
-        "peep_observed",
-        0.636189877986908
-      ],
-      [
-        "fio2_delta_t_min",
-        0.5240271687507629
-      ],
-      [
-        "minute_volume_delta_t_min",
-        0.3334619700908661
-      ],
-      [
         "spo2_locf",
-        0.32021185755729675
-      ],
-      [
-        "first_careunit",
-        0.15027675032615662
-      ],
-      [
-        "pip_delta_t_min",
-        0.14837223291397095
-      ],
-      [
-        "ventilator_mode",
-        0.12131767719984055
-      ],
-      [
-        "ventilator_mode_age_min",
-        0.11683619022369385
+        0.2840017080307007
       ],
       [
         "peep_locf",
-        0.10562103241682053
+        0.2317233681678772
       ],
       [
         "fio2_locf",
-        0.09591909497976303
+        0.1578522026538849
+      ],
+      [
+        "spo2_final",
+        0.14124414324760437
+      ],
+      [
+        "first_careunit",
+        0.10141843557357788
+      ],
+      [
+        "fio2_final",
+        0.09553259611129761
+      ],
+      [
+        "pip_locf",
+        0.07459524273872375
+      ],
+      [
+        "vasopressor_rate",
+        0.07236948609352112
+      ],
+      [
+        "peep_final",
+        0.06604772806167603
+      ],
+      [
+        "weight_kg",
+        0.05059680715203285
+      ],
+      [
+        "cci_chronic_pulmonary",
+        0.048863865435123444
+      ],
+      [
+        "vent_hours",
+        0.041555944830179214
       ],
       [
         "peep_delta_t_min",
-        0.08285088837146759
+        0.04113399609923363
       ],
       [
-        "etco2_delta_t_min",
-        0.061235155910253525
+        "ventilator_mode",
+        0.035778433084487915
       ],
       [
-        "race",
-        0.06044555827975273
-      ],
-      [
-        "respiratory_rate_total_delta_t_min",
-        0.05863010138273239
+        "respiratory_rate_total_locf",
+        0.030218392610549927
       ]
     ]
   }

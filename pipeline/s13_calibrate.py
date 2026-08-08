@@ -248,9 +248,14 @@ def tuned_params(algo: str) -> tuple[dict, str]:
 
 
 def main(force: bool = False) -> None:
+    # extra=FP_CALIBRATE is load-bearing: this stage reads ALERT_BUDGETS,
+    # SERVING_THRESHOLD and the fold assignments, and without them in the
+    # fingerprint a changed budget leaves the manifest valid, the stage logs
+    # SKIP, and s16 derives bands from a stale operating point.
     with cached_stage("s13_calibrate",
                       sources=[C.MODEL_MATRIX_PQ, C.FOLDS_PQ],
-                      output=REPORT_JSON, force=force) as ran:
+                      output=REPORT_JSON, force=force,
+                      extra=C.FP_CALIBRATE) as ran:
         if not ran:
             return
         _run()
@@ -478,9 +483,10 @@ def _run() -> None:
 
     # --------------------------------------------- operating point on the winner
     with stage("Operating point -- what `risk > 0.70` actually costs"):
-        aux = pl.read_parquet(C.MODEL_MATRIX_PQ, columns=["stay_id", "charttime"])
-        ct = aux["charttime"].to_numpy()[te]
-        key = hour_key(stay[te], ct)
+        # From load()'s metadata, NOT a fresh read of the model matrix: a
+        # forward label drops censored rows, so the matrix and `te` no longer
+        # describe the same row set and re-reading would misalign them.
+        key = hour_key(stay[te], m["charttime"][te])
         total_hours = len(np.unique(key))
         log(f"  test set: {total_hours:,} monitored patient-hours across "
             f"{len(np.unique(stay[te])):,} admissions")

@@ -40,104 +40,104 @@
   "phase_b": {
     "lightgbm": {
       "best_params": {
-        "learning_rate": 0.010485387725194618,
-        "num_leaves": 470,
-        "min_data_in_leaf": 1076,
-        "feature_fraction": 0.6061695553391381,
-        "bagging_fraction": 0.5909124836035503,
-        "lambda_l1": 0.00541524411940254,
-        "lambda_l2": 0.016480446427978974,
+        "learning_rate": 0.010452974688131843,
+        "num_leaves": 501,
+        "min_data_in_leaf": 631,
+        "feature_fraction": 0.5054342652280431,
+        "bagging_fraction": 0.5162699905112761,
+        "lambda_l1": 0.0018056790451925527,
+        "lambda_l2": 0.08464188343830302,
         "max_bin": 63
       },
-      "tuning_seconds": 653.0,
-      "tuning_best_ap": 0.6329196983182873,
-      "trials_completed": 8,
+      "tuning_seconds": 642.4,
+      "tuning_best_ap": 0.4213553297550008,
+      "trials_completed": 12,
       "trials_requested": 12,
-      "cv_seconds": 1457.5,
+      "cv_seconds": 564.8,
       "folds": [
         {
-          "average_precision": 0.6387832746146803,
-          "roc_auc": 0.9513954786077617,
-          "brier": 0.07658655254180638,
-          "positive_rate": 0.05311392924988448
+          "average_precision": 0.4216962509775407,
+          "roc_auc": 0.7894267300956844,
+          "brier": 0.1416206085077892,
+          "positive_rate": 0.08514654562720599
         },
         {
-          "average_precision": 0.6318753864351963,
-          "roc_auc": 0.9508390812588821,
-          "brier": 0.08373903048537976,
-          "positive_rate": 0.05317699327844637
+          "average_precision": 0.39359294705289705,
+          "roc_auc": 0.7757081222934649,
+          "brier": 0.14044898416590212,
+          "positive_rate": 0.08108099583832057
         },
         {
-          "average_precision": 0.6392530865033665,
-          "roc_auc": 0.9502284871755721,
-          "brier": 0.07496515442521988,
-          "positive_rate": 0.0534544895503502
+          "average_precision": 0.4294923106412069,
+          "roc_auc": 0.7891463726319052,
+          "brier": 0.1434870085687732,
+          "positive_rate": 0.0869638109457615
         },
         {
-          "average_precision": 0.6427376508482435,
-          "roc_auc": 0.9482612920824611,
-          "brier": 0.07499687303548042,
-          "positive_rate": 0.053521896276372195
+          "average_precision": 0.392278693957136,
+          "roc_auc": 0.7719408795307131,
+          "brier": 0.1403945916226612,
+          "positive_rate": 0.08150689273176753
         },
         {
-          "average_precision": 0.6473213538921258,
-          "roc_auc": 0.9529785514019962,
-          "brier": 0.07475014467820858,
-          "positive_rate": 0.053869545385434085
+          "average_precision": 0.42377838721737116,
+          "roc_auc": 0.7860067807395501,
+          "brier": 0.14134527460281607,
+          "positive_rate": 0.08661058044051866
         }
       ],
-      "ap_mean": 0.6399941504587224,
-      "ap_std": 0.0050822127052514285
+      "ap_mean": 0.41216771796923035,
+      "ap_std": 0.01591438018697564
     },
     "xgboost": {
       "best_params": {
-        "learning_rate": 0.015305744365500184,
-        "max_depth": 12,
-        "min_child_weight": 60.758057027616346,
-        "subsample": 0.9697494707820946,
-        "colsample_bytree": 0.9474136752138245,
-        "reg_alpha": 0.24637685958997463,
-        "reg_lambda": 4.869640941520899
+        "learning_rate": 0.03067591307513953,
+        "max_depth": 10,
+        "min_child_weight": 197.43682406495523,
+        "subsample": 0.9968676185612808,
+        "colsample_bytree": 0.5040206103892897,
+        "reg_alpha": 0.07069331472481809,
+        "reg_lambda": 0.0013014031840021581
       },
-      "tuning_seconds": 606.6,
-      "tuning_best_ap": 0.6389455545539968,
-      "trials_completed": 10,
+      "tuning_seconds": 372.4,
+      "tuning_best_ap": 0.4239426371599113,
+      "trials_completed": 12,
       "trials_requested": 12,
-      "cv_seconds": 424.2,
+      "cv_seconds": 120.4,
       "folds": [
         {
-          "average_precision": 0.6389455545539968,
-          "roc_auc": 0.9513080428200824,
-          "brier": 0.07825520634651184,
-          "positive_rate": 0.05311392924988448
+          "average_precision": 0.4239426371599113,
+          "roc_auc": 0.7909158992226163,
+          "brier": 0.16022689640522003,
+          "positive_rate": 0.08514654562720599
         },
         {
-          "average_precision": 0.6347645907406796,
-          "roc_auc": 0.9507915660293731,
-          "brier": 0.080955371260643,
-          "positive_rate": 0.05317699327844637
+          "average_precision": 0.3941781957699163,
+          "roc_auc": 0.7761772495286385,
+          "brier": 0.15822210907936096,
+          "positive_rate": 0.08108099583832057
         },
         {
-          "average_precision": 0.6391885521373923,
-          "roc_auc": 0.9508503960337154,
-          "brier": 0.0802195593714714,
-          "positive_rate": 0.0534544895503502
+          "average_precision": 0.4299953821102893,
+          "roc_auc": 0.7881521431781919,
+          "brier": 0.16038796305656433,
+          "positive_rate": 0.0869638109457615
         },
         {
-          "average_precision": 0.6427937998858815,
-          "roc_auc": 0.9490029339234792,
-          "brier": 0.08003184199333191,
-          "positive_rate": 0.053521896276372195
+          "average_precision": 0.3962469709303246,
+          "roc_auc": 0.7732979089043257,
+          "brier": 0.15860658884048462,
+          "positive_rate": 0.08150689273176753
         },
         {
-          "average_precision": 0.6477676120327137,
-          "roc_auc": 0.9528634502773142,
-          "brier": 0.07742419838905334,
-          "positive_rate": 0.053869545385434085
+          "average_precision": 0.4202303507277965,
+          "roc_auc": 0.784245107700706,
+          "brier": 0.15985864400863647,
+          "positive_rate": 0.08661058044051866
         }
       ],
-      "ap_mean": 0.6406920218701327,
-      "ap_std": 0.004357211403967108
+      "ap_mean": 0.41291870733964764,
+      "ap_std": 0.014803739714930214
     },
     "catboost": {
       "status": "excluded -- not viable on this hardware",

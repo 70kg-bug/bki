@@ -28,7 +28,7 @@ import polars as pl
 from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
 
 from . import config as C
-from .common import console, log, stage
+from .common import align_forward_labels, console, log, stage
 from .s10_assemble import FEATURES_JSON
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -39,13 +39,63 @@ RESULTS_JSON = C.REPORTS / "bakeoff_results.json"
 # ---------------------------------------------------------------------------
 # Data
 # ---------------------------------------------------------------------------
-def load(feature_set: str):
+def load(feature_set: str, target: str | None = None,
+         target_source: str | None = None):
+    """Feature matrix and label for the configured target.
+
+    `target`/`target_source` override the configured pair. s15 uses this to
+    pull the incumbent `warning` label on the UNFILTERED matrix, so it can
+    score every candidate label on one common row set -- which is the only
+    thing that makes a head-to-head comparison mean anything.
+
+    Two label sources. `warning` is a column of the model matrix. A forward
+    label is not -- it is joined from targets_forward.parquet, because a
+    label describing the future must never sit in the file the feature scan
+    reads. See common.align_forward_labels.
+
+    A forward label is also CENSORED: a row whose look-ahead window runs past
+    the end of the stay, with nothing having fired, is genuinely unknown. Those
+    rows are dropped here rather than being called negative -- teaching the
+    model that "the stay ended" means "no deterioration" would be inventing
+    the outcome we are trying to predict.
+    """
+    tgt = target or C.TARGET
+    src = target_source or (C.TARGET_SOURCE if target is None else "matrix")
+
     man = json.loads(FEATURES_JSON.read_text())
     feats = man["sets"][feature_set]
     cats = [c for c in man["categorical"] if c in feats]
-    cols = list(dict.fromkeys(
-        feats + ["stay_id", "subject_id", C.TARGET, "split", "fold"]))
+    # charttime rides along in the metadata so consumers never re-read it from
+    # the model matrix and index it with a mask built here. A forward label
+    # drops censored rows, so those two row sets differ and any such re-read
+    # is a misalignment waiting to happen.
+    keep = ["stay_id", "subject_id", "split", "fold", "charttime"]
+    if src == "matrix":
+        keep.append(tgt)
+    cols = list(dict.fromkeys(feats + keep))
     df = pl.read_parquet(C.MODEL_MATRIX_PQ, columns=cols)
+
+    if src == "matrix":
+        y = df[tgt].to_numpy().astype(np.int8)
+        observed = np.ones(len(y), dtype=bool)
+    else:
+        fwd = align_forward_labels(df.height)
+        if tgt not in fwd.columns:
+            raise KeyError(
+                f"target {tgt!r} is not in {C.FORWARD_TARGETS_PQ.name}. "
+                f"Available forward labels: "
+                f"{[c for c in fwd.columns if c.startswith('y_')]}")
+        s = fwd[tgt]
+        observed = s.is_not_null().to_numpy()
+        y = s.fill_null(0).to_numpy().astype(np.int8)
+        n_drop = int((~observed).sum())
+        log(f"target [bold]{tgt}[/bold] from {C.FORWARD_TARGETS_PQ.name}: "
+            f"{observed.sum():,} labelled rows, {n_drop:,} dropped as "
+            f"unobservable ({100 * n_drop / len(observed):.2f}%)")
+
+    if not observed.all():
+        df = df.filter(pl.Series(observed))
+        y = y[observed]
 
     pdf = df.select(feats).to_pandas()
     for c in cats:
@@ -55,13 +105,15 @@ def load(feature_set: str):
             pdf[c] = pdf[c].astype(np.float32)
 
     meta = dict(
-        y=df[C.TARGET].to_numpy().astype(np.int8),
+        y=y,
         stay_id=df["stay_id"].to_numpy(),
         subject_id=df["subject_id"].to_numpy(),
         split=df["split"].to_numpy(),
         fold=df["fold"].to_numpy(),
+        charttime=df["charttime"].to_numpy(),
         cats=cats,
         n_features=len(feats),
+        observed=observed,
     )
     return pdf, meta
 
