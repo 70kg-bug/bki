@@ -65,64 +65,211 @@
     },
     "target_agreement_pct": 100.0
   },
-  "parity": {
-    "rows": 40000,
-    "seconds_vectorised": 0.008531570434570312,
-    "seconds_original": 30.31088376045227,
-    "speedup": 3552.7906606304496,
+  "static": {
+    "reference_rows": 34147,
+    "table1_rows": 39394,
+    "joined": 34121,
     "columns": {
-      "spo2_observed": 1.0,
-      "fio2_observed": 1.0,
-      "flow_rate_observed": 1.0,
-      "peep_observed": 1.0,
-      "pip_observed": 1.0,
-      "respiratory_rate_total_observed": 1.0,
-      "minute_volume_observed": 1.0,
-      "tidal_volume_observed_observed": 1.0,
-      "etco2_observed": 1.0,
-      "inspiratory_ratio_observed": 1.0,
-      "expiratory_ratio_observed": 1.0,
-      "spo2_locf": 1.0,
-      "fio2_locf": 1.0,
-      "flow_rate_locf": 1.0,
-      "peep_locf": 1.0,
-      "pip_locf": 1.0,
-      "respiratory_rate_total_locf": 1.0,
-      "minute_volume_locf": 1.0,
-      "tidal_volume_observed_locf": 1.0,
-      "etco2_locf": 1.0,
-      "inspiratory_ratio_locf": 1.0,
-      "expiratory_ratio_locf": 1.0,
-      "spo2_structurally_missing_in_stay": 1.0,
-      "fio2_structurally_missing_in_stay": 1.0,
-      "flow_rate_structurally_missing_in_stay": 1.0,
-      "peep_structurally_missing_in_stay": 1.0,
-      "pip_structurally_missing_in_stay": 1.0,
-      "respiratory_rate_total_structurally_missing_in_stay": 1.0,
-      "minute_volume_structurally_missing_in_stay": 1.0,
-      "tidal_volume_observed_structurally_missing_in_stay": 1.0,
-      "etco2_structurally_missing_in_stay": 1.0,
-      "inspiratory_ratio_structurally_missing_in_stay": 1.0,
-      "expiratory_ratio_structurally_missing_in_stay": 1.0,
-      "spo2_final": 1.0,
-      "fio2_final": 1.0,
-      "flow_rate_final": 1.0,
-      "peep_final": 1.0,
-      "pip_final": 1.0,
-      "respiratory_rate_total_final": 1.0,
-      "minute_volume_final": 1.0,
-      "tidal_volume_observed_final": 1.0,
-      "etco2_final": 1.0,
-      "inspiratory_ratio_final": 1.0,
-      "expiratory_ratio_final": 1.0
+      "gender": {
+        "reference_column": "gender",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "race": {
+        "reference_column": "race",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "age_at_icu": {
+        "reference_column": "admission_age",
+        "both_present": 34121,
+        "agree": 33904,
+        "pct": 99.36402801793616
+      },
+      "charlson_index": {
+        "reference_column": "charlson_comorbidity_index",
+        "both_present": 34121,
+        "agree": 34083,
+        "pct": 99.8886316344773
+      },
+      "cci_myocardial_infarction": {
+        "reference_column": "myocardial_infarct",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_congestive_heart_failure": {
+        "reference_column": "congestive_heart_failure",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_peripheral_vascular": {
+        "reference_column": "peripheral_vascular_disease",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_cerebrovascular": {
+        "reference_column": "cerebrovascular_disease",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_dementia": {
+        "reference_column": "dementia",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_chronic_pulmonary": {
+        "reference_column": "chronic_pulmonary_disease",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_rheumatic": {
+        "reference_column": "rheumatic_disease",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_peptic_ulcer": {
+        "reference_column": "peptic_ulcer_disease",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_mild_liver_disease": {
+        "reference_column": "mild_liver_disease",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_severe_liver_disease": {
+        "reference_column": "severe_liver_disease",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_diabetes_uncomplicated": {
+        "reference_column": "diabetes_without_cc",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_diabetes_complicated": {
+        "reference_column": "diabetes_with_cc",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_paraplegia_hemiplegia": {
+        "reference_column": "paraplegia",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_renal_disease": {
+        "reference_column": "renal_disease",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_malignancy": {
+        "reference_column": "malignant_cancer",
+        "both_present": 34121,
+        "agree": 34120,
+        "pct": 99.99706925353888
+      },
+      "cci_metastatic_tumor": {
+        "reference_column": "metastatic_solid_tumor",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      },
+      "cci_aids_hiv": {
+        "reference_column": "aids",
+        "both_present": 34121,
+        "agree": 34121,
+        "pct": 100.0
+      }
     },
-    "delta_t_min_intentional_difference": true,
-    "all_identical": true
+    "below_99pct": []
   },
   "leakage": {
     "train_patients": 26436,
     "test_patients": 6609,
     "overlap": 0,
-    "dead_columns": []
+    "dead_columns": [],
+    "target": "y_resp_6h",
+    "target_source": "forward",
+    "static_null_pct": 0.0
+  },
+  "bands": {
+    "schema_version": "1.2.0",
+    "checks": {
+      "label matches the configured target": true,
+      "horizon matches config": true,
+      "names match config": true,
+      "machine round-trips": true,
+      "band floors ascend": true,
+      "floors match the machine's cuts": true,
+      "observed rate rises with severity": true,
+      "every rate sits inside its envelope": true,
+      "shares sum to 1": true,
+      "lift is arithmetically consistent": true,
+      "example band is a declared name": true,
+      "example state is a declared state": true,
+      "example carries arm and horizon": true,
+      "example reasons are coded, not prose": true,
+      "band table is not older than the model it describes": true
+    },
+    "failed": []
+  },
+  "records": {
+    "sampled": 5000,
+    "checks": {
+      "schema version matches the band table": true,
+      "every record names its arm and horizon": true,
+      "band names are declared values": true,
+      "band states are declared values": true,
+      "'confirmed' iff displayed == instant": true,
+      "contributors reconstruct the reported score": true,
+      "every contributor is tagged physiology or documentation": true,
+      "every contributor names its source table": true,
+      "documentation_share is a share": true,
+      "imputed_share is a share": true,
+      "documentation and imputed shares do not overlap": true,
+      "attribution_total is the positive denominator those shares use": true,
+      "no NaN or Infinity survived serialisation": true,
+      "telemetry values carry age, measured flag and provenance": true,
+      "telemetry source is a declared value": true,
+      "population_reference actually occurs (the field is load-bearing)": true,
+      "reasons are coded, not prose": true
+    },
+    "reconstruction_max": 8.677861016437305e-07,
+    "signed_tail_abs_median": 0.203094265,
+    "failed": []
+  },
+  "explanations": {
+    "sampled": 5000,
+    "checks": {
+      "explanations align 1:1 with records": true,
+      "schema version is the configured one": true,
+      "every explanation carries the provenance of the score it explains": true,
+      "status is a declared value": true,
+      "emitted status agrees with the floor re-derived from the record": true,
+      "the floor is reachable (the legal path is not dead code)": true,
+      "an insufficient reading says exactly the legal string, nothing more": true,
+      "insufficiency reasons are coded, not prose": true,
+      "explained readings name their generator": true,
+      "no emitted explanation contradicts its own record": true,
+      "no cohort default is quoted as a patient observation": true
+    },
+    "violations": {},
+    "failed": []
   }
 }
