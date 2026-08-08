@@ -102,7 +102,7 @@ def main(force: bool = False) -> None:
                any_value(c.subject_id) AS subject_id,
                c.charttime,
                {value_cols},
-               CAST(max(c.warning) AS TINYINT) AS {C.TARGET}
+               CAST(max(c.warning) AS TINYINT) AS {C.LEGACY_TARGET}
         FROM cache c
         JOIN cohort h USING (stay_id)
         WHERE c.itemid IN ({frozen_ids})
@@ -131,8 +131,9 @@ def main(force: bool = False) -> None:
                 f"SELECT 100.0*count({name})/count(*) FROM wide").fetchone()[0]
             log(f"  {name:<24} {pct_filled:5.1f}%")
         pos, tot_rows = con.execute(
-            f"SELECT sum({C.TARGET}), count(*) FROM wide").fetchone()
-        log(f"target `{C.TARGET}`: {pos:,} positive of {tot_rows:,} "
+            f"SELECT sum({C.LEGACY_TARGET}), count(*) FROM wide").fetchone()
+        log(f"`{C.LEGACY_TARGET}` (incumbent label, kept for verification): "
+            f"{pos:,} positive of {tot_rows:,} "
             f"({100*pos/tot_rows:.2f}%)")
         con.close()
 

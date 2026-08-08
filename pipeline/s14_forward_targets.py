@@ -76,7 +76,8 @@ def _components(h: int) -> str:
 def main(force: bool = False) -> None:
     sources = [C.T2_IMPUTED_PQ, C.T3_INTERV_PQ]
     with cached_stage("s14_forward_targets", sources=sources,
-                      output=C.FORWARD_TARGETS_PQ, force=force) as ran:
+                      output=C.FORWARD_TARGETS_PQ, force=force,
+                      extra=C.FP_FORWARD) as ran:
         if not ran:
             return
         _build()
@@ -87,11 +88,29 @@ def main(force: bool = False) -> None:
 def _build() -> None:
     con = connect_duckdb()
 
+    # Which measurement-grain column each forward aggregate reads.
+    #
+    # FiO2 persistence. The audit found 48.4% of escalations already back near
+    # baseline by the next reading and 53.9% landing at exactly 100% -- both
+    # the signature of pre-oxygenation before suctioning. The baseline stays
+    # anchored at the prediction row t, so persistence cannot be tested by
+    # filtering events directly; instead aggregate the level that is SUSTAINED
+    # across a reading and the one after it. least(fio2, next fio2) >= x holds
+    # exactly when both readings clear x, so `max(sustained) - locf >= rise`
+    # is precisely "some escalation in the window was still there at the next
+    # measurement" -- with the anchored baseline intact.
+    #
+    # The final reading of a stay has no successor, so its sustained value is
+    # NULL and it cannot fire. That is the honest reading: persistence was
+    # never observed, so it is not asserted.
+    fio2_src = "fio2_sus" if C.D_FIO2_PERSIST else "fio2"
+    vaso_src = "vaso_new" if C.D_VASO_STRICT else "vaso_now"
+
     fwd_cols = ",\n".join(
         f"""       min(spo2) OVER w{h} AS spo2_a{h},
-       max(fio2) OVER w{h} AS fio2_a{h},
+       max({fio2_src}) OVER w{h} AS fio2_a{h},
        max(peep) OVER w{h} AS peep_a{h},
-       max(vaso_now) OVER w{h} AS vaso_a{h}""" for h in C.HORIZONS_H)
+       max({vaso_src}) OVER w{h} AS vaso_a{h}""" for h in C.HORIZONS_H)
     windows = ",\n".join(f"       w{h} AS {_window(h)}" for h in C.HORIZONS_H)
     comps = ",".join(_components(h) for h in C.HORIZONS_H)
     flag_cols = ",\n".join(
@@ -102,7 +121,23 @@ def _build() -> None:
 
     # A row is positive if any component fired; negative only when the whole
     # window fits inside the stay; otherwise unknown and left NULL.
+    #
+    # y_resp is the TRAINED label. y_circ is the same event stream for the
+    # circulatory arm, kept separate rather than OR'd in: 29.1% of the
+    # four-arm label's positives were circulatory-only -- a pressor started
+    # with an unremarkable respiratory picture -- and this is a ventilation
+    # monitor. Separating the arms loses nothing (both are emitted) and stops
+    # a quarter of the label being about a different organ system.
+    #
+    # y_composite and y_strict are retained unchanged so the published
+    # head-to-head against `warning` stays reproducible.
     labels = ",\n".join(f"""
+        CASE WHEN d_fio2_{h}h OR d_peep_{h}h OR d_spo2_{h}h THEN 1
+             WHEN charttime + INTERVAL {h} HOUR <= t_end THEN 0
+             ELSE NULL END::TINYINT AS y_resp_{h}h,
+        CASE WHEN d_vaso_{h}h THEN 1
+             WHEN charttime + INTERVAL {h} HOUR <= t_end THEN 0
+             ELSE NULL END::TINYINT AS y_circ_{h}h,
         CASE WHEN d_fio2_{h}h OR d_peep_{h}h OR d_spo2_{h}h OR d_vaso_{h}h THEN 1
              WHEN charttime + INTERVAL {h} HOUR <= t_end THEN 0
              ELSE NULL END::TINYINT AS y_composite_{h}h,
@@ -124,12 +159,47 @@ def _build() -> None:
         LEFT JOIN read_parquet('{C.T3_INTERV_PQ.as_posix()}') i
                ON i.stay_id = t.stay_id AND i.charttime = t.charttime
       ),
+      marked AS (
+        SELECT *,
+               -- The FiO2 level sustained across this reading and the next.
+               -- Spelled out rather than written least(fio2, next_fio2):
+               -- DuckDB's least() SKIPS nulls, so the terse form would return
+               -- the next reading on rows where FiO2 was never measured (78%
+               -- of them) and would call a stay's final reading persistent.
+               -- Both make the arm fire MORE after a tightening meant to make
+               -- it fire less, which is how this was caught.
+               CASE WHEN fio2 IS NULL THEN NULL
+                    WHEN lead(fio2 IGNORE NULLS) OVER st IS NULL THEN NULL
+                    ELSE least(fio2, lead(fio2 IGNORE NULLS) OVER st)
+               END AS fio2_sus,
+               -- last row in this stay, strictly before now, with a pressor running
+               max(CASE WHEN vaso_now = 1 THEN charttime END) OVER st_prior AS vaso_last_on
+        FROM base
+        WINDOW
+          st AS (PARTITION BY stay_id ORDER BY charttime),
+          st_prior AS (PARTITION BY stay_id ORDER BY charttime
+                       ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING)
+      ),
+      qualified AS (
+        -- A pressor flip counts only if it is the stay's first, or follows a
+        -- real off-period. MIMIC chunks one continuous infusion into ~14.9
+        -- distinct start times, so without this a routine pause-and-resume
+        -- reads as new-onset shock: only 21.4% of raw flips were the stay's
+        -- first pressor and 58.4% were restarts inside four hours.
+        SELECT *,
+               CASE WHEN vaso_now = 1
+                     AND (vaso_last_on IS NULL
+                          OR date_diff('minute', vaso_last_on, charttime)
+                             >= {C.D_VASO_OFF_MIN})
+                    THEN 1 ELSE 0 END AS vaso_new
+        FROM marked
+      ),
       fwd AS (
         SELECT stay_id, charttime, fio2_locf, peep_locf, vaso_now,
                fio2_delta_t_min, peep_delta_t_min,
                max(charttime) OVER (PARTITION BY stay_id) AS t_end,
 {fwd_cols}
-        FROM base
+        FROM qualified
         WINDOW
 {windows}
       ),
@@ -161,7 +231,8 @@ def _report() -> None:
                  "horizons": {}}
 
     out["variants"] = {}
-    for variant, col in (("composite", "y_composite"), ("strict", "y_strict")):
+    for variant, col in (("resp", "y_resp"), ("circ", "y_circ"),
+                         ("composite", "y_composite"), ("strict", "y_strict")):
         console.rule(f"[bold cyan]Target D ({variant}) -- prevalence and coverage "
                      f"by horizon")
         log(f"  {'horizon':>8} {'labelled':>12} {'dropped':>10} {'positive':>11} "
@@ -190,11 +261,22 @@ def _report() -> None:
             prev_rate = rate
     out["horizons"] = out["variants"]["composite"]
 
-    # Strict is a subset of composite by construction; if it is not, the SQL is wrong.
+    # Strict, resp and circ are all subsets of composite by construction. If
+    # any of them is not, the SQL is wrong -- these are the cheapest possible
+    # check that a definition edit did what it claimed.
     for h in C.HORIZONS_H:
-        assert (out["variants"]["strict"][f"{h}h"]["positive"]
-                <= out["variants"]["composite"][f"{h}h"]["positive"]), (
-            f"strict fired more often than composite at {h} h -- impossible")
+        comp = out["variants"]["composite"][f"{h}h"]["positive"]
+        for sub in ("strict", "resp", "circ"):
+            assert out["variants"][sub][f"{h}h"]["positive"] <= comp, (
+                f"{sub} fired more often than composite at {h} h -- impossible")
+        # resp and circ partition composite: every positive fires at least one
+        # arm, so their union must recover it exactly.
+        union, = con.execute(
+            f"SELECT count(*) FILTER (WHERE y_resp_{h}h = 1 OR y_circ_{h}h = 1) FROM f"
+        ).fetchone()
+        assert union == comp, (
+            f"resp OR circ = {union:,} but composite = {comp:,} at {h} h -- "
+            "the arms do not partition the label")
 
     h = C.PRIMARY_HORIZON_H
     console.rule(f"[bold cyan]Components at {h} h -- which ones carry D")
@@ -264,7 +346,18 @@ def _report() -> None:
                        "published 7.98% was an undercount caused by charting "
                        "sparsity, not a different definition."}
     # Sanity only: a build this far off would mean the definition really did drift.
-    assert 0.02 < got < 0.35, f"row-grain prevalence {got:.4f} is not credible"
+    lo, hi = C.D_PREVALENCE_BOUNDS
+    assert lo < got < hi, f"row-grain prevalence {got:.4f} is not credible"
+
+    # The trained label is the respiratory arm, so record its own headline
+    # figures rather than making a reader derive them from the composite.
+    out["trained_label"] = {
+        "column": C.TARGET,
+        "horizon_h": C.PRIMARY_HORIZON_H,
+        "tightenings": {"fio2_persist_to_next_reading": C.D_FIO2_PERSIST,
+                        "vaso_first_or_off_period": C.D_VASO_STRICT,
+                        "vaso_off_period_min": C.D_VASO_OFF_MIN},
+        **out["variants"]["resp"][f"{C.PRIMARY_HORIZON_H}h"]}
 
     SUMMARY_JSON.write_text(json.dumps(out, indent=2, default=float), encoding="utf-8")
     log(f"report -> {SUMMARY_JSON}")

@@ -1,0 +1,529 @@
+{
+  "steps": [
+    {
+      "tag": "S0",
+      "target": "y_composite_6h",
+      "n_features": 102,
+      "rows_labelled": 3951132,
+      "rows_test": 768797,
+      "patients_test": 5943,
+      "prevalence": 0.13722348032055276,
+      "xgboost_params": "tuned",
+      "flags": {
+        "PM_CHARLSON_HIERARCHY": "0",
+        "PM_D_FIO2_PERSIST": "0",
+        "PM_D_VASO_STRICT": "0",
+        "PM_ENABLE_PBW": "0",
+        "PM_S02_FINAL_COHORT": "0",
+        "PM_SPLIT_INOTROPE": "0",
+        "PM_STATIC_BODY_METRICS": "0",
+        "PM_TARGET": "y_composite_6h"
+      },
+      "full": {
+        "average_precision": 0.42507603590038234,
+        "roc_auc": 0.7454828695866094,
+        "ap_skill": 0.3336351291604195
+      },
+      "documentation_only": {
+        "average_precision": 0.22242462115956663,
+        "roc_auc": 0.6297286462136125
+      },
+      "documentation_share": {
+        "average_precision": 0.29598882895929407,
+        "roc_auc": 0.5284631324054267
+      },
+      "physiology_delta": {
+        "average_precision": {
+          "mean": 0.20284547506687678,
+          "lo": 0.1924176874795115,
+          "hi": 0.2130172684042228,
+          "p_worse": 0.0,
+          "resamples": 200
+        },
+        "roc_auc": {
+          "mean": 0.11580113963757785,
+          "lo": 0.109189575406374,
+          "hi": 0.12260822338545878,
+          "p_worse": 0.0,
+          "resamples": 200
+        }
+      },
+      "description": "baseline: four-arm D, untightened, legacy static block",
+      "verdict": {
+        "decision": "BASELINE",
+        "reasons": [
+          "first state, nothing to compare"
+        ]
+      }
+    },
+    {
+      "tag": "S1",
+      "target": "y_composite_6h",
+      "n_features": 102,
+      "rows_labelled": 3943366,
+      "rows_test": 767085,
+      "patients_test": 5924,
+      "prevalence": 0.12387023602338725,
+      "xgboost_params": "tuned",
+      "flags": {
+        "PM_CHARLSON_HIERARCHY": "0",
+        "PM_D_FIO2_PERSIST": "1",
+        "PM_D_VASO_STRICT": "0",
+        "PM_ENABLE_PBW": "0",
+        "PM_S02_FINAL_COHORT": "0",
+        "PM_SPLIT_INOTROPE": "0",
+        "PM_STATIC_BODY_METRICS": "0",
+        "PM_TARGET": "y_composite_6h"
+      },
+      "full": {
+        "average_precision": 0.4255740209110571,
+        "roc_auc": 0.7604249244629577,
+        "ap_skill": 0.344359702515167
+      },
+      "documentation_only": {
+        "average_precision": 0.2042543994623129,
+        "roc_auc": 0.6290499913836991
+      },
+      "documentation_share": {
+        "average_precision": 0.26643405706313644,
+        "roc_auc": 0.49553625348964975
+      },
+      "physiology_delta": {
+        "average_precision": {
+          "mean": 0.22178533569011702,
+          "lo": 0.21221066091904492,
+          "hi": 0.22901101748549982,
+          "p_worse": 0.0,
+          "resamples": 200
+        },
+        "roc_auc": {
+          "mean": 0.1312251666866182,
+          "lo": 0.12504176961914695,
+          "hi": 0.13733771882201673,
+          "p_worse": 0.0,
+          "resamples": 200
+        }
+      },
+      "description": "+ FiO2 rise must persist to the next measured reading",
+      "verdict": {
+        "decision": "ACCEPT",
+        "reasons": [
+          "dAP +0.2218 >= +0.2028",
+          "dAUC +0.1312 >= +0.1158",
+          "doc-share 26.6% vs 29.6%"
+        ]
+      }
+    },
+    {
+      "tag": "S2",
+      "target": "y_composite_6h",
+      "n_features": 102,
+      "rows_labelled": 3937956,
+      "rows_test": 765993,
+      "patients_test": 5822,
+      "prevalence": 0.109260789589461,
+      "xgboost_params": "tuned",
+      "flags": {
+        "PM_CHARLSON_HIERARCHY": "0",
+        "PM_D_FIO2_PERSIST": "1",
+        "PM_D_VASO_STRICT": "1",
+        "PM_ENABLE_PBW": "0",
+        "PM_S02_FINAL_COHORT": "0",
+        "PM_SPLIT_INOTROPE": "0",
+        "PM_STATIC_BODY_METRICS": "0",
+        "PM_TARGET": "y_composite_6h"
+      },
+      "full": {
+        "average_precision": 0.4016241491583214,
+        "roc_auc": 0.752011765074788,
+        "ap_skill": 0.32822554138389287
+      },
+      "documentation_only": {
+        "average_precision": 0.18245386704516647,
+        "roc_auc": 0.6254071607215864
+      },
+      "documentation_share": {
+        "average_precision": 0.25034969348977637,
+        "roc_auc": 0.497624230695619
+      },
+      "physiology_delta": {
+        "average_precision": {
+          "mean": 0.21906262858176181,
+          "lo": 0.20653098195810288,
+          "hi": 0.22937860074806374,
+          "p_worse": 0.0,
+          "resamples": 200
+        },
+        "roc_auc": {
+          "mean": 0.12664233788614745,
+          "lo": 0.12032127800276843,
+          "hi": 0.13308840804933444,
+          "p_worse": 0.0,
+          "resamples": 200
+        }
+      },
+      "description": "+ vasopressor flip must be first-of-stay or follow a 6 h off-period",
+      "verdict": {
+        "decision": "ACCEPT",
+        "reasons": [
+          "dAP +0.2191 < +0.2218 but CI hi +0.2294 covers it -- within noise",
+          "dAUC +0.1266 < +0.1312 but CI hi +0.1331 covers it -- within noise",
+          "doc-share 25.0% vs 26.6%"
+        ]
+      }
+    },
+    {
+      "tag": "S3",
+      "target": "y_resp_6h",
+      "n_features": 102,
+      "rows_labelled": 3931646,
+      "rows_test": 764775,
+      "patients_test": 5485,
+      "prevalence": 0.08326108986303161,
+      "xgboost_params": "tuned",
+      "flags": {
+        "PM_CHARLSON_HIERARCHY": "0",
+        "PM_D_FIO2_PERSIST": "1",
+        "PM_D_VASO_STRICT": "1",
+        "PM_ENABLE_PBW": "0",
+        "PM_S02_FINAL_COHORT": "0",
+        "PM_SPLIT_INOTROPE": "0",
+        "PM_STATIC_BODY_METRICS": "0",
+        "PM_TARGET": "y_resp_6h"
+      },
+      "full": {
+        "average_precision": 0.39682007749293857,
+        "roc_auc": 0.7702318667831821,
+        "ap_skill": 0.34203739381265996
+      },
+      "documentation_only": {
+        "average_precision": 0.14187986239985328,
+        "roc_auc": 0.6245945362532236
+      },
+      "documentation_share": {
+        "average_precision": 0.18694655503228402,
+        "roc_auc": 0.4610652982432704
+      },
+      "physiology_delta": {
+        "average_precision": {
+          "mean": 0.2554847563095615,
+          "lo": 0.2399867193248846,
+          "hi": 0.26814776608891544,
+          "p_worse": 0.0,
+          "resamples": 200
+        },
+        "roc_auc": {
+          "mean": 0.14586594492455315,
+          "lo": 0.13821283942625143,
+          "hi": 0.1537189542626767,
+          "p_worse": 0.0,
+          "resamples": 200
+        }
+      },
+      "description": "respiratory arm becomes the label; circulatory reported separately",
+      "verdict": {
+        "decision": "ACCEPT",
+        "reasons": [
+          "dAP +0.2555 >= +0.2191",
+          "dAUC +0.1459 >= +0.1266",
+          "doc-share 18.7% vs 25.0%"
+        ]
+      }
+    },
+    {
+      "tag": "S4",
+      "target": "y_resp_6h",
+      "n_features": 102,
+      "rows_labelled": 3931646,
+      "rows_test": 764775,
+      "patients_test": 5485,
+      "prevalence": 0.08326108986303161,
+      "xgboost_params": "tuned",
+      "flags": {
+        "PM_CHARLSON_HIERARCHY": "0",
+        "PM_D_FIO2_PERSIST": "1",
+        "PM_D_VASO_STRICT": "1",
+        "PM_ENABLE_PBW": "0",
+        "PM_S02_FINAL_COHORT": "1",
+        "PM_SPLIT_INOTROPE": "0",
+        "PM_STATIC_BODY_METRICS": "0",
+        "PM_TARGET": "y_resp_6h"
+      },
+      "full": {
+        "average_precision": 0.4064966737219071,
+        "roc_auc": 0.7785239712239993,
+        "ap_skill": 0.35259284872132396
+      },
+      "documentation_only": {
+        "average_precision": 0.14187986239985328,
+        "roc_auc": 0.6245945362532236
+      },
+      "documentation_share": {
+        "average_precision": 0.18134999815618874,
+        "roc_auc": 0.44733864631357007
+      },
+      "physiology_delta": {
+        "average_precision": {
+          "mean": 0.2652215032501431,
+          "lo": 0.251598421589361,
+          "hi": 0.2788182847629303,
+          "p_worse": 0.0,
+          "resamples": 200
+        },
+        "roc_auc": {
+          "mean": 0.15405889859677996,
+          "lo": 0.14620211081301238,
+          "hi": 0.16208579007421392,
+          "p_worse": 0.0,
+          "resamples": 200
+        }
+      },
+      "description": "+ Table 1 on the final cohort (fills the static hole)",
+      "verdict": {
+        "decision": "ACCEPT",
+        "reasons": [
+          "dAP +0.2652 >= +0.2555",
+          "dAUC +0.1541 >= +0.1459",
+          "doc-share 18.1% vs 18.7%"
+        ]
+      }
+    },
+    {
+      "tag": "S5",
+      "target": "y_resp_6h",
+      "n_features": 102,
+      "rows_labelled": 3931646,
+      "rows_test": 764775,
+      "patients_test": 5485,
+      "prevalence": 0.08326108986303161,
+      "xgboost_params": "tuned",
+      "flags": {
+        "PM_CHARLSON_HIERARCHY": "1",
+        "PM_D_FIO2_PERSIST": "1",
+        "PM_D_VASO_STRICT": "1",
+        "PM_ENABLE_PBW": "0",
+        "PM_S02_FINAL_COHORT": "1",
+        "PM_SPLIT_INOTROPE": "0",
+        "PM_STATIC_BODY_METRICS": "0",
+        "PM_TARGET": "y_resp_6h"
+      },
+      "full": {
+        "average_precision": 0.40689419545182187,
+        "roc_auc": 0.778802087198738,
+        "ap_skill": 0.35302647461580616
+      },
+      "documentation_only": {
+        "average_precision": 0.14187986239985328,
+        "roc_auc": 0.6245945362532236
+      },
+      "documentation_share": {
+        "average_precision": 0.18112724416797754,
+        "roc_auc": 0.4468924085364149
+      },
+      "physiology_delta": {
+        "average_precision": {
+          "mean": 0.26563122667836286,
+          "lo": 0.25158184533896866,
+          "hi": 0.279303459788839,
+          "p_worse": 0.0,
+          "resamples": 200
+        },
+        "roc_auc": {
+          "mean": 0.15433529256410541,
+          "lo": 0.1465601272529847,
+          "hi": 0.1624997481255293,
+          "p_worse": 0.0,
+          "resamples": 200
+        }
+      },
+      "description": "+ Charlson severity hierarchy and corrected age bands",
+      "verdict": {
+        "decision": "ACCEPT",
+        "reasons": [
+          "dAP +0.2656 >= +0.2652",
+          "dAUC +0.1543 >= +0.1541",
+          "doc-share 18.1% vs 18.1%"
+        ]
+      }
+    },
+    {
+      "tag": "S6",
+      "target": "y_resp_6h",
+      "n_features": 105,
+      "rows_labelled": 3931646,
+      "rows_test": 764775,
+      "patients_test": 5485,
+      "prevalence": 0.08326108986303161,
+      "xgboost_params": "tuned",
+      "flags": {
+        "PM_CHARLSON_HIERARCHY": "1",
+        "PM_D_FIO2_PERSIST": "1",
+        "PM_D_VASO_STRICT": "1",
+        "PM_ENABLE_PBW": "0",
+        "PM_S02_FINAL_COHORT": "1",
+        "PM_SPLIT_INOTROPE": "1",
+        "PM_STATIC_BODY_METRICS": "0",
+        "PM_TARGET": "y_resp_6h"
+      },
+      "full": {
+        "average_precision": 0.40649478311874054,
+        "roc_auc": 0.7785592123067957,
+        "ap_skill": 0.3525907864076754
+      },
+      "documentation_only": {
+        "average_precision": 0.14187986239985328,
+        "roc_auc": 0.6245945362532236
+      },
+      "documentation_share": {
+        "average_precision": 0.18135105887754277,
+        "roc_auc": 0.4472820526071828
+      },
+      "physiology_delta": {
+        "average_precision": {
+          "mean": 0.2652750848587148,
+          "lo": 0.251231554451913,
+          "hi": 0.2790813576639667,
+          "p_worse": 0.0,
+          "resamples": 200
+        },
+        "roc_auc": {
+          "mean": 0.15412790255069805,
+          "lo": 0.1460899534577143,
+          "hi": 0.16230112037486613,
+          "p_worse": 0.0,
+          "resamples": 200
+        }
+      },
+      "description": "+ dobutamine regrouped from vasopressor to inotrope",
+      "verdict": {
+        "decision": "ACCEPT",
+        "reasons": [
+          "dAP +0.2653 < +0.2656 but CI hi +0.2791 covers it -- within noise",
+          "dAUC +0.1541 < +0.1543 but CI hi +0.1623 covers it -- within noise",
+          "doc-share 18.1% vs 18.1%"
+        ]
+      }
+    },
+    {
+      "tag": "S7",
+      "target": "y_resp_6h",
+      "n_features": 109,
+      "rows_labelled": 3931646,
+      "rows_test": 764775,
+      "patients_test": 5485,
+      "prevalence": 0.08326108986303161,
+      "xgboost_params": "tuned",
+      "flags": {
+        "PM_CHARLSON_HIERARCHY": "1",
+        "PM_D_FIO2_PERSIST": "1",
+        "PM_D_VASO_STRICT": "1",
+        "PM_ENABLE_PBW": "1",
+        "PM_S02_FINAL_COHORT": "1",
+        "PM_SPLIT_INOTROPE": "1",
+        "PM_STATIC_BODY_METRICS": "1",
+        "PM_TARGET": "y_resp_6h"
+      },
+      "full": {
+        "average_precision": 0.40669935009562774,
+        "roc_auc": 0.7786123993558376,
+        "ap_skill": 0.3528139327960583
+      },
+      "documentation_only": {
+        "average_precision": 0.14187986239985328,
+        "roc_auc": 0.6245945362532236
+      },
+      "documentation_share": {
+        "average_precision": 0.1812363586629077,
+        "roc_auc": 0.44719666655644497
+      },
+      "physiology_delta": {
+        "average_precision": {
+          "mean": 0.26545738607967345,
+          "lo": 0.25158590911716106,
+          "hi": 0.2790866195164005,
+          "p_worse": 0.0,
+          "resamples": 200
+        },
+        "roc_auc": {
+          "mean": 0.1541221550837038,
+          "lo": 0.146260989351761,
+          "hi": 0.1620329310311599,
+          "p_worse": 0.0,
+          "resamples": 200
+        }
+      },
+      "description": "+ body metrics and tidal volume per kg PBW",
+      "verdict": {
+        "decision": "ACCEPT",
+        "reasons": [
+          "dAP +0.2655 >= +0.2653",
+          "dAUC +0.1541 < +0.1541 but CI hi +0.1620 covers it -- within noise",
+          "doc-share 18.1% vs 18.1%"
+        ]
+      }
+    }
+  ],
+  "accept_rule": {
+    "physiology_delta": "AP and ROC-AUC of full minus documentation_only must not fall by more than the patient-level bootstrap can explain",
+    "documentation_share": "must not rise by more than 0.01",
+    "why_not_average_precision": "AP's floor equals prevalence, so any change that removes artifact positives lowers it without the model worsening"
+  },
+  "final": {
+    "tag": "S7",
+    "target": "y_resp_6h",
+    "n_features": 109,
+    "rows_labelled": 3931646,
+    "rows_test": 764775,
+    "patients_test": 5485,
+    "prevalence": 0.08326108986303161,
+    "xgboost_params": "tuned",
+    "flags": {
+      "PM_CHARLSON_HIERARCHY": "1",
+      "PM_D_FIO2_PERSIST": "1",
+      "PM_D_VASO_STRICT": "1",
+      "PM_ENABLE_PBW": "1",
+      "PM_S02_FINAL_COHORT": "1",
+      "PM_SPLIT_INOTROPE": "1",
+      "PM_STATIC_BODY_METRICS": "1",
+      "PM_TARGET": "y_resp_6h"
+    },
+    "full": {
+      "average_precision": 0.40669935009562774,
+      "roc_auc": 0.7786123993558376,
+      "ap_skill": 0.3528139327960583
+    },
+    "documentation_only": {
+      "average_precision": 0.14187986239985328,
+      "roc_auc": 0.6245945362532236
+    },
+    "documentation_share": {
+      "average_precision": 0.1812363586629077,
+      "roc_auc": 0.44719666655644497
+    },
+    "physiology_delta": {
+      "average_precision": {
+        "mean": 0.26545738607967345,
+        "lo": 0.25158590911716106,
+        "hi": 0.2790866195164005,
+        "p_worse": 0.0,
+        "resamples": 200
+      },
+      "roc_auc": {
+        "mean": 0.1541221550837038,
+        "lo": 0.146260989351761,
+        "hi": 0.1620329310311599,
+        "p_worse": 0.0,
+        "resamples": 200
+      }
+    },
+    "description": "+ body metrics and tidal volume per kg PBW",
+    "verdict": {
+      "decision": "ACCEPT",
+      "reasons": [
+        "dAP +0.2655 >= +0.2653",
+        "dAUC +0.1541 < +0.1541 but CI hi +0.1620 covers it -- within noise",
+        "doc-share 18.1% vs 18.1%"
+      ]
+    }
+  }
+}

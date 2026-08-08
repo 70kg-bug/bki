@@ -33,7 +33,7 @@ def main(force: bool = False) -> None:
             .group_by("subject_id")
             .agg(
                 pl.len().alias("n_rows"),
-                pl.col(C.TARGET).sum().alias("n_pos"),
+                pl.col(C.LEGACY_TARGET).sum().alias("n_pos"),
                 pl.col("stay_id").n_unique().alias("n_stays"),
             )
             .collect()

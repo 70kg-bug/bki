@@ -41,9 +41,10 @@ def main() -> None:
     # ---------------------------------------------------------------- baseline
     with stage("Current target: `warning`"):
         n, rate = con.execute(
-            f"SELECT sum({C.TARGET}), avg({C.TARGET}) FROM wide").fetchone()
+            f"SELECT sum({C.LEGACY_TARGET}), avg({C.LEGACY_TARGET}) FROM wide").fetchone()
         stays_any = con.execute(
-            f"SELECT count(DISTINCT stay_id) FROM wide WHERE {C.TARGET}=1").fetchone()[0]
+            f"SELECT count(DISTINCT stay_id) FROM wide "
+            f"WHERE {C.LEGACY_TARGET}=1").fetchone()[0]
         log(f"  row-level positives {n:,} ({100*rate:.2f}%)  |  "
             f"admissions with >=1 positive {stays_any:,} "
             f"({100*stays_any/total_stays:.1f}%)")

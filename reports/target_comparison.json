@@ -1,8 +1,8 @@
 {
   "protocol": {
     "rows_total": 4200041,
-    "rows_compared": 3945823,
-    "pct_dropped_unobservable": 6.052750437436206,
+    "rows_compared": 3909192,
+    "pct_dropped_unobservable": 6.924908590178049,
     "horizon_hours": 6,
     "xgboost_params": "tuned",
     "censoring": "positive if observed in (t, t+H]; negative only if the window fits inside the stay; dropped otherwise"
@@ -10,270 +10,470 @@
   "labels": {
     "warning": {
       "note": "incumbent -- caregiver documentation flag",
-      "prevalence": 0.05044742232735713,
+      "prevalence": 0.05050263378261664,
       "full": {
-        "average_precision": 0.614212166706283,
-        "roc_auc": 0.9466974409719644,
-        "brier": 0.02870630220284686,
-        "positive_rate": 0.05044742232735713,
-        "brier_skill": 0.4007345286079186,
-        "brier_reference_constant": 0.047902479907882406,
-        "ece": 0.001944811997078185,
-        "mce": 0.00852034968894752,
-        "mean_predicted": 0.05103729444462281,
-        "reliability": 1.1664872418360199e-05,
-        "resolution": 0.014898798079319082,
-        "uncertainty": 0.047902479907882406,
-        "ap_skill": 0.5937161960643775
+        "average_precision": 0.6208610801242129,
+        "roc_auc": 0.9515195787906929,
+        "brier": 0.028471337271047392,
+        "positive_rate": 0.05050263378261664,
+        "brier_skill": 0.40625485173798503,
+        "brier_reference_constant": 0.04795211776363555,
+        "ece": 0.000833495706720891,
+        "mce": 0.0030667775822262877,
+        "mean_predicted": 0.05079125362129509,
+        "reliability": 1.4919431319451917e-06,
+        "resolution": 0.01523189506596764,
+        "uncertainty": 0.04795211776363555,
+        "ap_skill": 0.6006951326403313
       },
       "documentation_only": {
-        "average_precision": 0.5269675921954508,
-        "roc_auc": 0.9242008424632043,
-        "brier": 0.0316658036810322,
-        "positive_rate": 0.05044742232735713,
-        "brier_skill": 0.33895272766824835,
-        "brier_reference_constant": 0.047902479907882406,
-        "ece": 0.001446903738316083,
-        "mce": 0.007789698404635004,
-        "mean_predicted": 0.05060942989459558,
-        "reliability": 5.787546605970316e-06,
-        "resolution": 0.010801291620444596,
-        "uncertainty": 0.047902479907882406,
-        "ap_skill": 0.5018365291957255
+        "average_precision": 0.5024049048781882,
+        "roc_auc": 0.9214290239766209,
+        "brier": 0.03386910076473469,
+        "positive_rate": 0.05050263378261664,
+        "brier_skill": 0.2936891560935543,
+        "brier_reference_constant": 0.04795211776363555,
+        "ece": 0.008996205202750783,
+        "mce": 0.044837402583866925,
+        "mean_predicted": 0.05092766126686415,
+        "reliability": 0.00028047947504345394,
+        "resolution": 0.010653887833633285,
+        "uncertainty": 0.04795211776363555,
+        "ap_skill": 0.47593841454859864
       },
       "documentation_share": {
-        "average_precision": 0.8452464873323258,
-        "roc_auc": 0.9496379507798165
+        "average_precision": 0.792312753487165,
+        "roc_auc": 0.9333571427961911
       },
       "physiology_adds": {
-        "average_precision": 0.08724457451083223,
-        "roc_auc": 0.02249659850876007,
-        "share_of_skill": 0.15475351266767423
+        "average_precision": 0.1184561752460247,
+        "roc_auc": 0.03009055481407208,
+        "share_of_skill": 0.207687246512835
       },
       "coverage": {
-        "admissions": 7067,
-        "admissions_with_any_positive": 5551,
-        "admissions_any_pct": 78.54818168954294,
-        "monitored_stay_days": 28085.206250000112,
-        "positives_per_stay_day": 1.416154812820712
+        "admissions": 6421,
+        "admissions_with_any_positive": 5236,
+        "admissions_any_pct": 81.54493069615324,
+        "monitored_stay_days": 27648.88333333328,
+        "positives_per_stay_day": 1.3894593693657336
+      }
+    },
+    "D_resp": {
+      "note": "SHIPPED: respiratory arm, 6 h look-ahead",
+      "prevalence": 0.07834172261345905,
+      "full": {
+        "average_precision": 0.37792768050036907,
+        "roc_auc": 0.7756319454938996,
+        "brier": 0.05970092566223404,
+        "positive_rate": 0.07834172261345905,
+        "brier_skill": 0.17316658356063652,
+        "brier_reference_constant": 0.07220429711141489,
+        "ece": 0.002405440923777065,
+        "mce": 0.00521225200455494,
+        "mean_predicted": 0.08070167601160425,
+        "reliability": 8.323870254984137e-06,
+        "resolution": 0.00909151319026512,
+        "uncertainty": 0.07220429711141489,
+        "ap_skill": 0.3250510142831002
+      },
+      "documentation_only": {
+        "average_precision": 0.13388208592024928,
+        "roc_auc": 0.6250152680707535,
+        "brier": 0.07086817084472673,
+        "positive_rate": 0.07834172261345905,
+        "brier_skill": 0.018504802624509376,
+        "brier_reference_constant": 0.07220429711141489,
+        "ece": 0.00576420716525561,
+        "mce": 0.0174337847306974,
+        "mean_predicted": 0.08126519462890759,
+        "reliability": 4.848543274922112e-05,
+        "resolution": 0.0012656725033345104,
+        "uncertainty": 0.07220429711141489,
+        "ap_skill": 0.060261340530983754
+      },
+      "documentation_share": {
+        "average_precision": 0.185390409145131,
+        "roc_auc": 0.45355870433211587
+      },
+      "physiology_adds": {
+        "average_precision": 0.2440455945801198,
+        "roc_auc": 0.1506166774231461,
+        "share_of_skill": 0.814609590854869
+      },
+      "coverage": {
+        "admissions": 6421,
+        "admissions_with_any_positive": 3493,
+        "admissions_any_pct": 54.39962622644448,
+        "monitored_stay_days": 27648.88333333328,
+        "positives_per_stay_day": 2.1553854194232116
+      }
+    },
+    "D_circ": {
+      "note": "circulatory arm, reported separately",
+      "prevalence": 0.02948495648047241,
+      "full": {
+        "average_precision": 0.16875291967923628,
+        "roc_auc": 0.8275088806929052,
+        "brier": 0.026484107874128304,
+        "positive_rate": 0.02948495648047241,
+        "brier_skill": 0.07448686757860212,
+        "brier_reference_constant": 0.028615593821817057,
+        "ece": 0.0019738293447682485,
+        "mce": 0.0065748972209341006,
+        "mean_predicted": 0.02901633045019824,
+        "reliability": 8.002485791225593e-06,
+        "resolution": 0.0015187029529571568,
+        "uncertainty": 0.028615593821817057,
+        "ap_skill": 0.1434990257273242
+      },
+      "documentation_only": {
+        "average_precision": 0.07310691645708582,
+        "roc_auc": 0.6507356295855421,
+        "brier": 0.028090241837047197,
+        "positive_rate": 0.02948495648047241,
+        "brier_skill": 0.018358940514780486,
+        "brier_reference_constant": 0.028615593821817057,
+        "ece": 0.0022492862674702344,
+        "mce": 0.005216210517261594,
+        "mean_predicted": 0.03006395809645395,
+        "reliability": 7.175291896840655e-06,
+        "resolution": 0.0003724580191666376,
+        "uncertainty": 0.028615593821817057,
+        "ap_skill": 0.0449472270088884
+      },
+      "documentation_share": {
+        "average_precision": 0.31322322072274406,
+        "roc_auc": 0.46024898398673403
+      },
+      "physiology_adds": {
+        "average_precision": 0.09564600322215046,
+        "roc_auc": 0.17677325110736308,
+        "share_of_skill": 0.6867767792772559
+      },
+      "coverage": {
+        "admissions": 6421,
+        "admissions_with_any_positive": 2401,
+        "admissions_any_pct": 37.3929294502414,
+        "monitored_stay_days": 27648.88333333328,
+        "positives_per_stay_day": 0.8112081681418132
       }
     },
     "D_composite": {
       "note": "composite deterioration, 6 h look-ahead",
-      "prevalence": 0.13723403580647003,
+      "prevalence": 0.10305997294572186,
       "full": {
-        "average_precision": 0.4221867596752144,
-        "roc_auc": 0.7487732311428823,
-        "brier": 0.09963167263824195,
-        "positive_rate": 0.13723403580647003,
-        "brier_skill": 0.15852235652510738,
-        "brier_reference_constant": 0.11840085522273852,
-        "ece": 0.003656825210341823,
-        "mce": 0.01797732935618268,
-        "mean_predicted": 0.13715389249818438,
-        "reliability": 3.7096830439770225e-05,
-        "resolution": 0.016209386617940528,
-        "uncertainty": 0.11840085522273852,
-        "ap_skill": 0.3302781237262921
+        "average_precision": 0.37399746383155025,
+        "roc_auc": 0.7491130151072678,
+        "brier": 0.07868278218391236,
+        "positive_rate": 0.10305997294572186,
+        "brier_skill": 0.1488104592417534,
+        "brier_reference_constant": 0.09243861492214894,
+        "ece": 0.0032746936644434477,
+        "mce": 0.012587035856061496,
+        "mean_predicted": 0.10561228062183133,
+        "reliability": 1.9243922915066387e-05,
+        "resolution": 0.010789110459443642,
+        "uncertainty": 0.09243861492214894,
+        "ap_skill": 0.3020686809748459
       },
       "documentation_only": {
-        "average_precision": 0.21476360888973536,
-        "roc_auc": 0.6201912813643946,
-        "brier": 0.11534475763502194,
-        "positive_rate": 0.13723403580647003,
-        "brier_skill": 0.025811448591037456,
-        "brier_reference_constant": 0.11840085522273852,
-        "ece": 0.004638345704925873,
-        "mce": 0.027616154689851166,
-        "mean_predicted": 0.13487305743816616,
-        "reliability": 6.558261919136695e-05,
-        "resolution": 0.0029537463939405344,
-        "uncertainty": 0.11840085522273852,
-        "ap_skill": 0.08986164997333439
+        "average_precision": 0.16995643102574415,
+        "roc_auc": 0.6239179937220364,
+        "brier": 0.09035339107539347,
+        "positive_rate": 0.10305997294572186,
+        "brier_skill": 0.022557930454838893,
+        "brier_reference_constant": 0.09243861492214894,
+        "ece": 0.006115123741405809,
+        "mce": 0.014505034569006842,
+        "mean_predicted": 0.1068277481271764,
+        "reliability": 4.952194593666945e-05,
+        "resolution": 0.0019598379119979323,
+        "uncertainty": 0.09243861492214894,
+        "ap_skill": 0.07458297774905084
       },
       "documentation_share": {
-        "average_precision": 0.27207872250056886,
-        "roc_auc": 0.4831359098092151
+        "average_precision": 0.246907350700358,
+        "roc_auc": 0.4974368507750485
       },
       "physiology_adds": {
-        "average_precision": 0.20742315078547904,
-        "roc_auc": 0.1285819497784877,
-        "share_of_skill": 0.7279212774994311
+        "average_precision": 0.2040410328058061,
+        "roc_auc": 0.12519502138523142,
+        "share_of_skill": 0.753092649299642
       },
       "coverage": {
-        "admissions": 7067,
-        "admissions_with_any_positive": 5408,
-        "admissions_any_pct": 76.52469223149852,
-        "monitored_stay_days": 28085.206250000112,
-        "positives_per_stay_day": 3.8524196346252424
+        "admissions": 6421,
+        "admissions_with_any_positive": 4264,
+        "admissions_any_pct": 66.40710169755489,
+        "monitored_stay_days": 27648.88333333328,
+        "positives_per_stay_day": 2.835449050684994
       }
     },
     "D_strict": {
       "note": "as above, escalation baseline <= 60 min old",
-      "prevalence": 0.1133275410480654,
+      "prevalence": 0.08448217612098442,
       "full": {
-        "average_precision": 0.4213772693438537,
-        "roc_auc": 0.7770346593361439,
-        "brier": 0.08263804449444188,
-        "positive_rate": 0.1133275410480654,
-        "brier_skill": 0.17760332259047962,
-        "brier_reference_constant": 0.10048440948806445,
-        "ece": 0.002973771325332674,
-        "mce": 0.013280150859127204,
-        "mean_predicted": 0.1126833563819019,
-        "reliability": 2.0019468648041282e-05,
-        "resolution": 0.014937349338243184,
-        "uncertainty": 0.10048440948806445,
-        "ap_skill": 0.34742223600799504
+        "average_precision": 0.360873665128533,
+        "roc_auc": 0.7686810753890672,
+        "brier": 0.0653568726857802,
+        "positive_rate": 0.08448217612098442,
+        "brier_skill": 0.15499482780690887,
+        "brier_reference_constant": 0.0773449380388474,
+        "ece": 0.002220883639766387,
+        "mce": 0.009351502369185832,
+        "mean_predicted": 0.08547497149929147,
+        "reliability": 1.0301656225904847e-05,
+        "resolution": 0.009026965159712257,
+        "uncertainty": 0.0773449380388474,
+        "ap_skill": 0.3018963495833298
       },
       "documentation_only": {
-        "average_precision": 0.20515117724294,
-        "roc_auc": 0.6593410584458088,
-        "brier": 0.09671596194701862,
-        "positive_rate": 0.1133275410480654,
-        "brier_skill": 0.03750280824900942,
-        "brier_reference_constant": 0.10048440948806445,
-        "ece": 0.002601564179515482,
-        "mce": 0.011316054405278102,
-        "mean_predicted": 0.11114137660042538,
-        "reliability": 1.5380779065384522e-05,
-        "resolution": 0.003527017948091515,
-        "uncertainty": 0.10048440948806445,
-        "ap_skill": 0.10355981542881353
+        "average_precision": 0.16453571352598975,
+        "roc_auc": 0.6655584367722648,
+        "brier": 0.0748089135579235,
+        "positive_rate": 0.08448217612098442,
+        "brier_skill": 0.03278849974189835,
+        "brier_reference_constant": 0.0773449380388474,
+        "ece": 0.00398647379888311,
+        "mce": 0.009490544937130127,
+        "mean_predicted": 0.08687156207684939,
+        "reliability": 2.146933707722405e-05,
+        "resolution": 0.0023540143025993386,
+        "uncertainty": 0.0773449380388474,
+        "ap_skill": 0.08744071968563256
       },
       "documentation_share": {
-        "average_precision": 0.2980805621964576,
-        "roc_auc": 0.5751665110338057
+        "average_precision": 0.28963821459357225,
+        "roc_auc": 0.6161894228409117
       },
       "physiology_adds": {
-        "average_precision": 0.21622609210091373,
-        "roc_auc": 0.11769360089033509,
-        "share_of_skill": 0.7019194378035424
+        "average_precision": 0.19633795160254328,
+        "roc_auc": 0.10312263861680238,
+        "share_of_skill": 0.7103617854064277
       },
       "coverage": {
-        "admissions": 7067,
-        "admissions_with_any_positive": 5400,
-        "admissions_any_pct": 76.41149002405547,
-        "monitored_stay_days": 28085.206250000112,
-        "positives_per_stay_day": 3.181318990669675
+        "admissions": 6421,
+        "admissions_with_any_positive": 4256,
+        "admissions_any_pct": 66.28251051238125,
+        "monitored_stay_days": 27648.88333333328,
+        "positives_per_stay_day": 2.324325334416765
       }
     }
   },
   "deltas": {
     "warning": {
       "full_minus_doc_ap": {
-        "mean": 0.08697121147141433,
-        "lo": 0.08200762297567572,
-        "hi": 0.0920456984711507,
+        "mean": 0.11871906213860944,
+        "lo": 0.11373321750543725,
+        "hi": 0.12441078741538163,
         "p_worse": 0.0,
         "resamples": 200
       },
       "full_minus_doc_auc": {
-        "mean": 0.022461680683429255,
-        "lo": 0.020664858662789422,
-        "hi": 0.024681608163967538,
+        "mean": 0.030054486061580173,
+        "lo": 0.028406578011908573,
+        "hi": 0.032007549544541346,
+        "p_worse": 0.0,
+        "resamples": 200
+      }
+    },
+    "D_resp": {
+      "full_minus_doc_ap": {
+        "mean": 0.24391039182371382,
+        "lo": 0.23250573970793975,
+        "hi": 0.25505624525779685,
+        "p_worse": 0.0,
+        "resamples": 200
+      },
+      "full_minus_doc_auc": {
+        "mean": 0.15037995611476485,
+        "lo": 0.14313023820086285,
+        "hi": 0.15760140256642216,
+        "p_worse": 0.0,
+        "resamples": 200
+      }
+    },
+    "D_circ": {
+      "full_minus_doc_ap": {
+        "mean": 0.09601897817297038,
+        "lo": 0.08751371953198249,
+        "hi": 0.10433455757334091,
+        "p_worse": 0.0,
+        "resamples": 200
+      },
+      "full_minus_doc_auc": {
+        "mean": 0.17627402088431976,
+        "lo": 0.16634578619950935,
+        "hi": 0.1859112448730744,
         "p_worse": 0.0,
         "resamples": 200
       }
     },
     "D_composite": {
       "full_minus_doc_ap": {
-        "mean": 0.20698555245829536,
-        "lo": 0.19306767346667356,
-        "hi": 0.21952729467094131,
+        "mean": 0.20406087265039743,
+        "lo": 0.19543321257956597,
+        "hi": 0.21345930699264978,
         "p_worse": 0.0,
         "resamples": 200
       },
       "full_minus_doc_auc": {
-        "mean": 0.12918293214475585,
-        "lo": 0.11819507258763595,
-        "hi": 0.1423736824665985,
+        "mean": 0.1251001488055824,
+        "lo": 0.12014940934600607,
+        "hi": 0.1313849833917834,
         "p_worse": 0.0,
         "resamples": 200
       }
     },
     "D_strict": {
       "full_minus_doc_ap": {
-        "mean": 0.2155942405013172,
-        "lo": 0.2037815566147979,
-        "hi": 0.22780132380233992,
+        "mean": 0.19647334924857177,
+        "lo": 0.18732986121180134,
+        "hi": 0.20511482928864988,
         "p_worse": 0.0,
         "resamples": 200
       },
       "full_minus_doc_auc": {
-        "mean": 0.11773096837321809,
-        "lo": 0.10966872671467294,
-        "hi": 0.1266870661064646,
+        "mean": 0.10295003101805227,
+        "lo": 0.09726818016022053,
+        "hi": 0.10866808293936839,
         "p_worse": 0.0,
         "resamples": 200
       }
     }
   },
   "agreement": {
-    "cohen_kappa": 0.07604075225883267,
-    "both_positive": 10669,
-    "warning_only": 29104,
-    "D_only": 97527,
-    "neither": 651105,
-    "jaccard": 0.07770575382374363
+    "D_resp": {
+      "cohen_kappa": 0.08627618326020559,
+      "both_positive": 6978,
+      "warning_only": 31439,
+      "D_only": 52616,
+      "neither": 669660,
+      "jaccard": 0.07665352125053553
+    },
+    "D_composite": {
+      "cohen_kappa": 0.07795997828442902,
+      "both_positive": 8204,
+      "warning_only": 30213,
+      "D_only": 70193,
+      "neither": 652083,
+      "jaccard": 0.07553632262222632
+    }
   },
   "horizon_sweep": {
-    "composite": {
+    "resp": {
       "2h": {
-        "rows_labelled": 4102658,
-        "rows_dropped_unobservable": 97383,
-        "pct_dropped": 2.3186202229930615,
-        "positive": 285553,
-        "positive_rate": 0.06960195073535254,
-        "admissions_any": 26844,
-        "admissions_any_pct": 68.27233652941327
+        "rows_labelled": 4098786,
+        "rows_dropped_unobservable": 101255,
+        "pct_dropped": 2.4108097992376742,
+        "positive": 157892,
+        "positive_rate": 0.038521650069069234,
+        "admissions_any": 19007,
+        "admissions_any_pct": 48.34049696075689
       },
       "6h": {
-        "rows_labelled": 3951132,
-        "rows_dropped_unobservable": 248909,
-        "pct_dropped": 5.926346909470646,
-        "positive": 543803,
-        "positive_rate": 0.13763220261940123,
-        "admissions_any": 27030,
-        "admissions_any_pct": 68.74539026933543
+        "rows_labelled": 3931646,
+        "rows_dropped_unobservable": 268395,
+        "pct_dropped": 6.390294761408281,
+        "positive": 330414,
+        "positive_rate": 0.08403961089070583,
+        "admissions_any": 19259,
+        "admissions_any_pct": 48.98140847936112
       },
       "12h": {
-        "rows_labelled": 3780508,
-        "rows_dropped_unobservable": 419533,
-        "pct_dropped": 9.988783442828296,
-        "positive": 805005,
-        "positive_rate": 0.21293566896300709,
-        "admissions_any": 27086,
-        "admissions_any_pct": 68.88781505124749
+        "rows_labelled": 3743017,
+        "rows_dropped_unobservable": 457024,
+        "pct_dropped": 10.881417586161659,
+        "positive": 517018,
+        "positive_rate": 0.13812868068726378,
+        "admissions_any": 19361,
+        "admissions_any_pct": 49.24082504641522
+      }
+    },
+    "circ": {
+      "2h": {
+        "rows_labelled": 4093862,
+        "rows_dropped_unobservable": 106179,
+        "pct_dropped": 2.528046750019821,
+        "positive": 58535,
+        "positive_rate": 0.014298234771958605,
+        "admissions_any": 14106,
+        "admissions_any_pct": 35.875785243775276
+      },
+      "6h": {
+        "rows_labelled": 3915515,
+        "rows_dropped_unobservable": 284526,
+        "pct_dropped": 6.774362440747602,
+        "positive": 121433,
+        "positive_rate": 0.031013289439575636,
+        "admissions_any": 14220,
+        "admissions_any_pct": 36.16572140695338
+      },
+      "12h": {
+        "rows_labelled": 3708339,
+        "rows_dropped_unobservable": 491702,
+        "pct_dropped": 11.70707619282764,
+        "positive": 187762,
+        "positive_rate": 0.0506323720673865,
+        "admissions_any": 14226,
+        "admissions_any_pct": 36.180981205015385
+      }
+    },
+    "composite": {
+      "2h": {
+        "rows_labelled": 4099496,
+        "rows_dropped_unobservable": 100545,
+        "pct_dropped": 2.393905202353977,
+        "positive": 211097,
+        "positive_rate": 0.05149340309150198,
+        "admissions_any": 24649,
+        "admissions_any_pct": 62.6897937383962
+      },
+      "6h": {
+        "rows_labelled": 3937969,
+        "rows_dropped_unobservable": 262072,
+        "pct_dropped": 6.239748611977835,
+        "positive": 434011,
+        "positive_rate": 0.11021188841252941,
+        "admissions_any": 24828,
+        "admissions_any_pct": 63.145044380579364
+      },
+      "12h": {
+        "rows_labelled": 3756002,
+        "rows_dropped_unobservable": 444039,
+        "pct_dropped": 10.572253937521086,
+        "positive": 666569,
+        "positive_rate": 0.1774676903792916,
+        "admissions_any": 24896,
+        "admissions_any_pct": 63.31798875861543
       }
     },
     "strict": {
       "2h": {
-        "rows_labelled": 4101507,
-        "rows_dropped_unobservable": 98534,
-        "pct_dropped": 2.346024717377759,
-        "positive": 236084,
-        "positive_rate": 0.05756030649222347,
-        "admissions_any": 26035,
-        "admissions_any_pct": 66.2148070907195
+        "rows_labelled": 4099265,
+        "rows_dropped_unobservable": 100776,
+        "pct_dropped": 2.399405148664025,
+        "positive": 171949,
+        "positive_rate": 0.041946300129413444,
+        "admissions_any": 23821,
+        "admissions_any_pct": 60.583941605839414
       },
       "6h": {
-        "rows_labelled": 3945823,
-        "rows_dropped_unobservable": 254218,
-        "pct_dropped": 6.052750437436206,
-        "positive": 445584,
-        "positive_rate": 0.11292549108259545,
-        "admissions_any": 26982,
-        "admissions_any_pct": 68.6233118848394
+        "rows_labelled": 3936011,
+        "rows_dropped_unobservable": 264030,
+        "pct_dropped": 6.286367204510623,
+        "positive": 358553,
+        "positive_rate": 0.09109552793424612,
+        "admissions_any": 24778,
+        "admissions_any_pct": 63.01787939672931
       },
       "12h": {
-        "rows_labelled": 3768687,
-        "rows_dropped_unobservable": 431354,
-        "pct_dropped": 10.27023307629616,
-        "positive": 654422,
-        "positive_rate": 0.17364721453386817,
-        "admissions_any": 27072,
-        "admissions_any_pct": 68.85220885576948
+        "rows_labelled": 3750963,
+        "rows_dropped_unobservable": 449078,
+        "pct_dropped": 10.692228956812565,
+        "positive": 552966,
+        "positive_rate": 0.14741974261009771,
+        "admissions_any": 24883,
+        "admissions_any_pct": 63.28492586281442
       }
     }
   }

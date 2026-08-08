@@ -32,11 +32,10 @@ import gc
 import json
 
 import numpy as np
-import polars as pl
 from sklearn.metrics import cohen_kappa_score, roc_auc_score
 
 from . import config as C
-from .common import cached_stage, console, log, stage
+from .common import align_forward_labels, cached_stage, console, log, stage
 from .s11_train import load
 from .s12_baselines import bootstrap_metric_diff
 from .s13_calibrate import fit_platt, fit_xgb, score, tuned_params, xgb_predict
@@ -45,27 +44,18 @@ REPORT_JSON = C.REPORTS / "target_comparison.json"
 
 H = C.PRIMARY_HORIZON_H
 LABELS = [
-    ("warning", None, "incumbent -- caregiver documentation flag"),
+    (C.LEGACY_TARGET, None, "incumbent -- caregiver documentation flag"),
+    ("D_resp", f"y_resp_{H}h", f"SHIPPED: respiratory arm, {H} h look-ahead"),
+    ("D_circ", f"y_circ_{H}h", "circulatory arm, reported separately"),
     ("D_composite", f"y_composite_{H}h", f"composite deterioration, {H} h look-ahead"),
     ("D_strict", f"y_strict_{H}h", f"as above, escalation baseline <= "
                                    f"{C.STRICT_BASELINE_AGE_MIN:.0f} min old"),
 ]
 
 
-def align_forward_labels(n_rows: int) -> pl.DataFrame:
-    """Join the forward labels onto model-matrix row order.
-
-    An explicit row index and a re-sort, rather than trusting the join to preserve
-    order -- silently misaligned labels would be undetectable downstream.
-    """
-    keys = (pl.read_parquet(C.MODEL_MATRIX_PQ, columns=["stay_id", "charttime"])
-              .with_row_index("_i"))
-    tf = pl.read_parquet(C.FORWARD_TARGETS_PQ)
-    j = keys.join(tf, on=["stay_id", "charttime"], how="left").sort("_i")
-    assert j.height == n_rows == keys.height, (
-        f"forward-label join changed the row count: {keys.height:,} -> {j.height:,} "
-        "-- (stay_id, charttime) is not unique somewhere")
-    return j
+# align_forward_labels now lives in common, shared with s11_train.load() --
+# the trainer and this comparison must align labels identically or their
+# numbers are not about the same rows.
 
 
 def coverage(y, stay_id, charttime) -> dict:
@@ -92,7 +82,7 @@ def coverage(y, stay_id, charttime) -> dict:
 def main(force: bool = False) -> None:
     sources = [C.MODEL_MATRIX_PQ, C.FORWARD_TARGETS_PQ, C.FOLDS_PQ]
     with cached_stage("s15_target_compare", sources=sources, output=REPORT_JSON,
-                      force=force) as ran:
+                      force=force, extra=C.FP_COMPARE) as ran:
         if not ran:
             return
         _run()
@@ -102,13 +92,15 @@ def _run() -> None:
     report: dict = {"protocol": {}, "labels": {}, "deltas": {}}
     xp, xp_src = tuned_params("xgboost")
 
-    X, m = load("full")
+    # Deliberately the INCUMBENT label on the UNFILTERED matrix. load() would
+    # otherwise hand back the shipped forward target with censored rows already
+    # dropped, and every label here has to be scored on one common row set.
+    X, m = load("full", target=C.LEGACY_TARGET, target_source="matrix")
     sub, stay, fold, split = m["subject_id"], m["stay_id"], m["fold"], m["split"]
     fwd = align_forward_labels(len(sub))
-    charttime = pl.read_parquet(C.MODEL_MATRIX_PQ,
-                                columns=["charttime"])["charttime"].to_numpy()
+    charttime = m["charttime"]
 
-    ys, valid = {"warning": m["y"].astype(np.int8)}, {}
+    ys, valid = {C.LEGACY_TARGET: m["y"].astype(np.int8)}, {}
     for name, col, _ in LABELS:
         if col is None:
             continue
@@ -116,9 +108,10 @@ def _run() -> None:
         valid[name] = s.is_not_null().to_numpy()
         ys[name] = s.fill_null(0).to_numpy().astype(np.int8)
 
-    # The comparison row set: where D is observable. Identical for every label,
-    # which is the whole point -- otherwise no difference between them is real.
-    comparable = valid["D_composite"] & valid["D_strict"]
+    # The comparison row set: where every candidate is observable. Identical
+    # for every label, which is the whole point -- otherwise no difference
+    # between them is real.
+    comparable = np.logical_and.reduce(list(valid.values()))
     with stage("Comparison row set"):
         log(f"  all rows                     {len(sub):>12,}")
         log(f"  D observable (both variants) {comparable.sum():>12,}  "
@@ -171,9 +164,17 @@ def _run() -> None:
     del X
     gc.collect()
 
-    Xd, _ = load("documentation_only")
+    # Same override as the full matrix above. Without it load() would apply the
+    # SHIPPED target's censoring and hand back 3.93M rows, while tr/es/cal/te
+    # index the unfiltered 4.20M -- the two feature sets would no longer be
+    # about the same rows, which is the one thing this comparison exists to
+    # guarantee.
+    Xd, md = load("documentation_only", target=C.LEGACY_TARGET,
+                  target_source="matrix")
+    assert len(Xd) == len(sub), (
+        f"doc_only matrix has {len(Xd):,} rows, full had {len(sub):,}")
     fit_all(Xd, "doc_only", (tr, es, cal, te))
-    del Xd
+    del Xd, md
     gc.collect()
 
     # ---- score, and compute the delta that actually decides it ---------------
@@ -220,19 +221,24 @@ def _run() -> None:
                 f"dAUC={d_auc['mean']:+.4f} "
                 f"[{d_auc['lo']:+.4f}, {d_auc['hi']:+.4f}]")
 
-    with stage("Do `warning` and D measure the same thing?"):
-        yw, yd = ys["warning"][te], ys["D_composite"][te]
-        k = float(cohen_kappa_score(yw, yd))
-        both = int(((yw == 1) & (yd == 1)).sum())
-        report["agreement"] = {
-            "cohen_kappa": k, "both_positive": both,
-            "warning_only": int(((yw == 1) & (yd == 0)).sum()),
-            "D_only": int(((yw == 0) & (yd == 1)).sum()),
-            "neither": int(((yw == 0) & (yd == 0)).sum()),
-            "jaccard": both / max(int(((yw == 1) | (yd == 1)).sum()), 1)}
-        log(f"  Cohen's kappa = {k:.4f}  |  both positive {both:,}  "
-            f"warning-only {report['agreement']['warning_only']:,}  "
-            f"D-only {report['agreement']['D_only']:,}")
+    with stage(f"Do `{C.LEGACY_TARGET}` and D measure the same thing?"):
+        # Against the SHIPPED label first, then the composite, which is what
+        # the published kappa was computed on and is kept for continuity.
+        report["agreement"] = {}
+        yw = ys[C.LEGACY_TARGET][te]
+        for other in ("D_resp", "D_composite"):
+            yd = ys[other][te]
+            both = int(((yw == 1) & (yd == 1)).sum())
+            a = {"cohen_kappa": float(cohen_kappa_score(yw, yd)),
+                 "both_positive": both,
+                 f"{C.LEGACY_TARGET}_only": int(((yw == 1) & (yd == 0)).sum()),
+                 "D_only": int(((yw == 0) & (yd == 1)).sum()),
+                 "neither": int(((yw == 0) & (yd == 0)).sum()),
+                 "jaccard": both / max(int(((yw == 1) | (yd == 1)).sum()), 1)}
+            report["agreement"][other] = a
+            log(f"  {other:<12} kappa = {a['cohen_kappa']:.4f}  |  both positive "
+                f"{both:,}  {C.LEGACY_TARGET}-only "
+                f"{a[f'{C.LEGACY_TARGET}_only']:,}  D-only {a['D_only']:,}")
         log("  [dim]kappa near 0 means the two labels are not the same event "
             "wearing different names[/dim]")
 

@@ -90,7 +90,7 @@ def main(force: bool = False) -> None:
         ordered = ["stay_id", "subject_id", "charttime"]
         for p in params:
             ordered += [p] + [f"{p}{s}" for s in C.SUFFIXES]
-        ordered += [C.TARGET]          # the original dropped this here; we keep it
+        ordered += [C.LEGACY_TARGET]   # the original dropped this here; we keep it
         df = df.select(ordered)
 
         df.write_parquet(C.T2_IMPUTED_PQ, compression="zstd")
