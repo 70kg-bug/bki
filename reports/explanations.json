@@ -1,0 +1,85 @@
+{
+  "explanations": 58765,
+  "schema_version": "1.0.0",
+  "record_schema_version": "1.2.0",
+  "format": "gzipped JSONL -- one complete JSON object per line; parse with json.loads() per line, not json.load() on the file",
+  "bytes_gzipped": 1307303,
+  "status": {
+    "ok": 54815,
+    "insufficient_data": 3950
+  },
+  "insufficient_reasons": {
+    "IMPUTED_SHARE_ABOVE_FLOOR": 3834,
+    "DOC_SHARE_ABOVE_FLOOR": 206
+  },
+  "floor": {
+    "max_imputed_share": 0.3,
+    "max_doc_share": 0.3,
+    "staleness_gate": null,
+    "staleness_note": "deliberately absent -- readings whose driving values are >48 h old carry 1.38x the forward-label prevalence of the rest, so gating on staleness would suppress readings at ABOVE the base deterioration rate. Age is disclosed per parameter instead."
+  },
+  "suppressed_by_band": {
+    "LOW": {
+      "suppressed": 3518,
+      "total": 43579,
+      "share": 0.08072695564377337
+    },
+    "MEDIUM": {
+      "suppressed": 317,
+      "total": 9276,
+      "share": 0.03417421302285468
+    },
+    "HIGH": {
+      "suppressed": 105,
+      "total": 3744,
+      "share": 0.028044871794871796
+    },
+    "CRITICAL": {
+      "suppressed": 10,
+      "total": 2166,
+      "share": 0.0046168051708217915
+    }
+  },
+  "violations": {},
+  "warnings": {},
+  "warning_codes_seen": [],
+  "baseline_length": {
+    "median": 656.0,
+    "p10": 527.0,
+    "p90": 731.5999999999985
+  },
+  "self_check": {
+    "records_checked": 198,
+    "applied": {
+      "band swapped": 198,
+      "trend claim injected": 198,
+      "imputed value quoted": 198,
+      "number fabricated": 198,
+      "wrong value for right parameter": 198,
+      "unsupported driver named": 198,
+      "soft trend language": 198,
+      "lowercase band name": 198,
+      "treatment language": 198,
+      "documentation as physiology": 10
+    },
+    "caught": {
+      "band swapped": 198,
+      "trend claim injected": 198,
+      "imputed value quoted": 198,
+      "number fabricated": 198,
+      "wrong value for right parameter": 198,
+      "unsupported driver named": 198,
+      "soft trend language": 198,
+      "lowercase band name": 198,
+      "treatment language": 198,
+      "documentation as physiology": 10
+    },
+    "missed": {},
+    "forward_language_false_positives": 0
+  },
+  "fallback_text": {
+    "insufficient": "Insufficient data",
+    "generator_unavailable": "LLM explanation and recommendations are not available"
+  },
+  "seconds": 35.8
+}
