@@ -171,6 +171,16 @@ def age_phrase(age_min: float | None) -> str:
     return f"last charted {age_min / 1440:.1f} days ago"
 
 
+def _pct(x: float | None) -> str | None:
+    """A fraction as a percentage string, rounded ONCE, here.
+
+    One decimal place because that is what grounding.allowed_numbers will accept
+    back: it matches a stated number against any record quantity rounded to the
+    precision the text used, so a value rendered at 1 dp always round-trips.
+    """
+    return None if x is None else f"{x * 100:.1f}%"
+
+
 def format_value(param: str, value, display: dict) -> str:
     label, unit, dec = display[param]
     if value is None:
@@ -224,17 +234,38 @@ def build_payload(record: dict, policy: Policy) -> dict:
     contributors = []
     for c in record["contributors"][: policy.contributor_k]:
         p, suffix = split_feature(c["feature"], d)
+        imputed = bool(p in imputed_params and suffix in VALUE_SUFFIXES)
+        # `{p}_locf` normally renders as "(last charted value)", which is a lie
+        # when there IS no charted value: for an imputed parameter _locf is null
+        # and _final is a cohort statistic. A generator handed that label will
+        # faithfully repeat it, and no numeric check can catch a false claim
+        # made entirely in words.
+        label = (f"{d[p][0]} (no charted value for this patient; cohort default)"
+                 if imputed else feature_label(c["feature"], d))
         contributors.append({
             "feature": c["feature"],
-            "label": feature_label(c["feature"], d),
+            "label": label,
             "direction": "raises" if c["contribution"] > 0 else "lowers",
-            "share": (abs(c["contribution"]) / total) if total > 0 else 0.0,
+            # NAMED share_of_score, not `share`. It is the fraction of the
+            # model's decision this feature accounts for. It is NOT a change in
+            # the patient's risk, and "lowers the risk by 18%" is how a reader
+            # will take it unless the field says otherwise.
+            #
+            # PRE-FORMATTED, deliberately. Handing over 0.1027 and asking for a
+            # percentage makes the generator do arithmetic, and a generator
+            # doing arithmetic gets it wrong: measured at n=200, it rendered
+            # 0.1027 as "10.28%" and produced a number that is in no field of
+            # the record. Every contributor share in that same sentence was
+            # correct -- the errors are conversions, not inventions. Never ask
+            # it to compute anything that can be computed exactly here.
+            "share_of_score": _pct(
+                (abs(c["contribution"]) / total) if total > 0 else 0.0),
             "value": c["value"],
             "kind": c["kind"],
             # The model leaned on a cohort default here. Not the same as a
             # documentation feature and not the same as physiology: it is the
             # absence of this patient's data acting as if it were data.
-            "imputed": bool(p in imputed_params and suffix in VALUE_SUFFIXES),
+            "imputed": imputed,
         })
 
     return {
@@ -257,8 +288,9 @@ def build_payload(record: dict, policy: Policy) -> dict:
         "contributors": contributors,
         "contributors_shown": len(contributors),
         "contributors_total": len(record["contributors"]),
-        "documentation_share": record["documentation_share"],
-        "imputed_share": record.get("imputed_share"),
+        # Pre-formatted for the same reason as share_of_score above.
+        "documentation_share": _pct(record["documentation_share"]),
+        "imputed_share": _pct(record.get("imputed_share")),
         "constraints": {
             "no_trend_data": True,
             "note": ("every input is point-in-time plus staleness -- there are "
@@ -268,24 +300,53 @@ def build_payload(record: dict, policy: Policy) -> dict:
     }
 
 
+# The prohibitions alone produced text that broke no rule and said very little:
+# it never named the band, quoted no contributor value or share, and dropped
+# both the staleness and the documentation share. Zero violations, strictly less
+# informative than the template. The checker catches FALSE statements, not
+# MISSING ones, so completeness has to be demanded rather than assumed.
 SYSTEM_PROMPT = """\
 You explain a ventilation risk assessment to an ICU clinician. You are given a \
 structured record and you may state ONLY what is in it.
 
-Rules, all of which are checked mechanically after you answer:
+YOU MUST INCLUDE, in this order:
 
-1. Never state a number that is not in the record.
-2. Never say which direction any value has been moving. The model has no trend \
-inputs, so any claim that something is rising, falling, climbing, worsening or \
-improving is unsupported.
-3. A parameter marked not_charted_for_this_patient has no value in the record. \
-Do not supply one, and do not describe it as observed.
-4. Name only the band given in the record.
-5. Values carry an age. A value last charted hours ago is not a current reading \
-and must not be described as one.
+1. The band, named exactly as it appears in the record, and what it means: the \
+percentage of readings in that band that met the label, against the cohort \
+percentage.
+2. The two or three largest contributors. Give each one's value and the share \
+of the score it accounts for. A share is how much of the model's decision that \
+feature accounts for; it is NOT a change in the patient's risk. Write "accounts \
+for X% of the score", never "lowers the risk by X%". If a contributor is marked \
+imputed, say the model used a cohort default there and give NO value for it.
+3. Any parameter carried forward rather than measured: give its value and how \
+old it is.
+4. Any parameter not charted for this patient, by name.
+5. The documentation share: how much of the score came from charting patterns \
+rather than physiology.
 
-Be brief and concrete. State what the band means using the rates given, then \
-what the model weighted most, then what is missing.\
+Every percentage in the record is already written out for you. Quote it exactly \
+as it appears. Do NOT convert, re-round, add or average any number: the record \
+is arithmetic-free by design and every figure you need is present in the form \
+you should say it.
+
+Name a parameter as a contributor ONLY if it appears in the contributors list, \
+and give each one its own share exactly as written. Never group several \
+parameters behind one figure, never combine or apportion shares between them, \
+and never say "respectively".
+
+YOU MUST NOT, and all of this is checked mechanically after you answer:
+
+- State any number that is not in the record.
+- Say which direction any value has been moving. The model has no trend inputs, \
+so "rising", "falling", "worsening" and "improving" are unsupported. The risk \
+itself is forward-looking; the measurements are not.
+- Give a value for a parameter marked not_charted_for_this_patient.
+- Name any band other than the one in the record.
+- Describe a value charted hours ago as a current reading.
+
+Write three to five plain sentences for a clinician reading at the bedside. No \
+preamble, no bullet points, no restating these instructions.\
 """
 
 
@@ -337,7 +398,7 @@ def baseline(record: dict, policy: Policy) -> str:
                     f" {v}" if isinstance(v, str) else "")
                 imp = ""
             bits.append(f"{c['label']}{shown} ({c['direction']} the score, "
-                        f"{c['share']:.0%} of it{imp})")
+                        f"{c['share_of_score']} of it{imp})")
         parts.append("Weighted most: " + "; ".join(bits) + ".")
 
     stale = [t for t in pl["telemetry"]
@@ -356,7 +417,7 @@ def baseline(record: dict, policy: Policy) -> str:
     doc = pl["documentation_share"]
     if doc is not None:
         parts.append(f"Documentation features rather than physiology account "
-                     f"for {doc:.0%} of this score.")
+                     f"for {doc} of this score.")
     return " ".join(parts)
 
 
