@@ -6,6 +6,44 @@
 
 ---
 
+> ## ⚠️ SUPERSEDED IN PART — the target changed on 2026-08-06
+>
+> **This document describes the model trained on `warning`.** That is no longer the target.
+> The pipeline now trains on **`y_resp_6h`** — the respiratory arm of composite
+> deterioration at a 6 h look-ahead. Every performance figure below (AP 0.6395, ROC-AUC
+> 0.9512, the 0.1959 operating point, the 84%/95% documentation shares) is about the OLD
+> label and is retained as the evidence base for the switch, not as a description of what
+> ships.
+>
+> **What is still true:** the scale story (286 → 39,319 admissions), the imputation parity
+> result, the feature-representation ablation, the faithfulness verification, the
+> calibration mechanics (`scale_pos_weight` breaks the level; Platt fixes it at zero
+> ranking cost), and the CatBoost hardware exclusion. All of these reproduced on the new
+> label.
+>
+> **What is superseded:** every headline metric, the operating point and its thresholds, the
+> documentation-share figures, and the sections arguing that `warning` should be replaced —
+> that argument was accepted and acted on.
+>
+> **Current numbers live in:**
+> `reports/gate_pivot.json` (the eight-step ablation that drove the switch),
+> `reports/target_comparison.json` (head-to-head on one common row set),
+> `reports/calibration.json` and `models/operating_point_y_resp_6h.json` (rewritten for the
+> new label), and `.claude/rules/results.md` (the interpretation).
+>
+> Headline replacement figures, for orientation — physiology-attributable skill,
+> patient-level bootstrap, identical rows and features:
+>
+> | Target | ΔAP | ΔROC-AUC | doc-share (AP) |
+> |---|---|---|---|
+> | `warning` | +0.1187 | +0.0301 | 79.2% |
+> | **`y_resp_6h`** | **+0.2439** | **+0.1504** | **18.5%** |
+>
+> This file needs a full rewrite against the new label; it has no generator, so that is a
+> manual job and has not been done.
+
+---
+
 ## Summary
 
 The training set went from **286 ICU admissions / 3,288 rows** to **39,319 admissions /
