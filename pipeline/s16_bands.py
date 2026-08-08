@@ -10,13 +10,20 @@ observed rate is what makes the resulting sentence checkable.
 WHAT IS SOLVED HERE
 -------------------
 1. Three cuts, each set so that PROMOTIONS INTO that band cost no more than its
-   alert budget (1 / 2 / 4 per ventilated patient-day). s13 anchored on occupancy
-   -- hours where the score sat above a threshold -- so its published cuts differ.
-   A patient held at HIGH for six hours is one interruption, not six, and
-   interruptions are what alarm fatigue is about.
+   budget -- C.BAND_PROMOTION_BUDGETS, currently 0.70 / 0.45 / 0.20 per
+   ventilated patient-day. These are NOT C.ALERT_BUDGETS (1 / 2 / 4): s13
+   anchored on OCCUPANCY, hours where the score sat above a threshold, so its
+   published cuts differ and its numbers are not comparable to these. Carrying
+   s13's figures across is exactly how this stage once produced a band table
+   with 97% of readings in HIGH or CRITICAL. A patient held at HIGH for six
+   hours is one interruption, not six, and interruptions are what alarm fatigue
+   is about.
 2. Hysteresis parameters, MEASURED rather than chosen: every combination in the
-   sweep grid is evaluated and the winner minimises band flips subject to the
-   median lost warning time staying under C.BAND_MAX_LOST_LEAD_MIN.
+   sweep grid is evaluated and the winner MAXIMISES sensitivity at the top band,
+   subject to median lost warning time under C.BAND_MAX_LOST_LEAD_MIN and the
+   flip rate under its ceiling. Selecting on flip rate alone is confounded --
+   each configuration re-solves its cuts to hold the budget, so hysteresis meets
+   it at a lower cut, and lower cuts are crossed more often.
 3. A rate envelope per band, derived from the calibration fold with a
    patient-level bootstrap and asserted on test. A retrain that moves HIGH's real
    rate outside its envelope fails the build rather than quietly changing what the
