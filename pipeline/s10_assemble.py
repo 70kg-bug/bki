@@ -20,13 +20,21 @@ import json
 import polars as pl
 
 from . import config as C
-from .common import account_parquet, cached_stage, log
+from .common import (account_parquet, cached_stage, forward_label_columns, log)
 
 FEATURES_JSON = C.BUILD / "features.json"
 
-# Never model inputs: identifiers, timestamps, split bookkeeping, the target.
-NON_FEATURES = {"stay_id", "subject_id", "hadm_id", "charttime", C.TARGET,
-                "split", "fold"}
+# Never model inputs: identifiers, timestamps, split bookkeeping, and BOTH
+# labels.
+#
+# LEGACY_TARGET is listed explicitly and not just as "whatever C.TARGET is".
+# When the target moved to a forward label, `warning` stopped matching C.TARGET
+# and would have walked straight into the feature set -- it is still a column
+# of the matrix, because verify.py diffs it against the BigQuery export. A
+# guard keyed only on the CURRENT target silently stops protecting the previous
+# one at the exact moment you switch.
+NON_FEATURES = {"stay_id", "subject_id", "hadm_id", "charttime",
+                C.TARGET, C.LEGACY_TARGET, "split", "fold"}
 
 CATEGORICAL = ["gender", "admission_type", "admission_location", "insurance",
                "language", "marital_status", "race", "first_careunit",
@@ -36,7 +44,7 @@ CATEGORICAL = ["gender", "admission_type", "admission_location", "insurance",
 def main(force: bool = False) -> None:
     sources = [C.T2_IMPUTED_PQ, C.T1_STATIC_PQ, C.T3_INTERV_PQ, C.FOLDS_PQ]
     with cached_stage("s10_assemble", sources=sources, output=C.MODEL_MATRIX_PQ,
-                      force=force) as ran:
+                      force=force, extra=C.FP_MATRIX) as ran:
         if not ran:
             return
 
@@ -65,6 +73,33 @@ def main(force: bool = False) -> None:
         log(f"[green]join integrity: {df.height:,} rows, "
             f"{df['stay_id'].n_unique():,} admissions -- unchanged[/green]")
 
+        # A LEFT join that matches nothing is still a successful LEFT join.
+        # Table 1 was built on the strict cohort while Table 2 used the final
+        # one, so 22.53% of rows carried NULL across all 33 static features and
+        # every existing assertion passed. Worse than missing data: the null
+        # pattern identified the cohort arm exactly, and the two arms have
+        # different label prevalence. Row counts were checked; whether the join
+        # MATCHED was not.
+        unmatched = df.filter(pl.col("gender").is_null()).height
+        pct = 100 * unmatched / df.height
+        if unmatched:
+            missing_stays = (df.filter(pl.col("gender").is_null())["stay_id"]
+                             .n_unique())
+            log(f"[yellow]Table 1 join: {unmatched:,} rows ({pct:.2f}%) across "
+                f"{missing_stays:,} admissions have no static record[/yellow]")
+        if C.S02_FINAL_COHORT:
+            assert pct < 1.0, (
+                f"{unmatched:,} rows ({pct:.2f}%) have no Table 1 match. Table 1 "
+                f"and Table 2 are built on different cohorts -- check that s02 ran "
+                f"after s04 and read {C.COHORT_PQ.name}.")
+            log(f"[green]Table 1 coverage: {100 - pct:.2f}% of rows[/green]")
+        else:
+            # Deliberately reproducing the legacy strict-cohort build, so the
+            # hole is expected. Warn loudly rather than assert -- the gate
+            # harness needs to be able to rebuild this state on purpose.
+            log("[yellow]S02_FINAL_COHORT is off: reproducing the legacy build "
+                "with an incomplete Table 1 on purpose[/yellow]")
+
         # --- reverse-causation guard on Table 3 -------------------------------
         for g in ("vasopressor", "sedative", "opioid", "paralytic"):
             col = f"{g}_minutes_since_start"
@@ -75,6 +110,32 @@ def main(force: bool = False) -> None:
                     f"row timestamp -- the strictly-before guard failed")
         log("[green]reverse-causation guard: every intervention began strictly "
             "before its row[/green]")
+
+        # ------------------------------------------------------------------
+        # Tidal volume per kg of predicted body weight.
+        #
+        # The one genuinely new physiological signal in this pass. Absolute
+        # tidal volume in millilitres is not comparable between patients: 450
+        # mL is lung-protective for a 180 cm man and frankly injurious for a
+        # 150 cm woman. ARDSNet targets 6-8 mL/kg PBW, and PBW depends on
+        # height and sex only -- never on actual weight, which moves with
+        # fluid balance and would make the denominator a treatment effect.
+        #
+        # This is a ratio of two columns already present, so it adds no new
+        # information in the information-theoretic sense. It adds a SHAPE the
+        # trees would otherwise have to discover by splitting on height and
+        # tidal volume jointly, many times over, in every region of the space.
+        # ------------------------------------------------------------------
+        if C.ENABLE_PBW and "pbw_kg" in df.columns:
+            df = df.with_columns(
+                pl.when(pl.col("pbw_kg") > 0)
+                  .then(pl.col("tidal_volume_observed_final") / pl.col("pbw_kg"))
+                  .otherwise(None)
+                  .alias("tidal_volume_ml_per_kg_pbw"))
+            got = df["tidal_volume_ml_per_kg_pbw"].is_not_null().sum()
+            med = df["tidal_volume_ml_per_kg_pbw"].median()
+            log(f"tidal volume per kg PBW: {got:,} rows ({100*got/df.height:.1f}%), "
+                f"median {med:.2f} mL/kg [dim](ARDSNet target 6-8)[/dim]")
 
         df.write_parquet(C.MODEL_MATRIX_PQ, compression="zstd")
 
@@ -103,6 +164,8 @@ def main(force: bool = False) -> None:
 
         manifest = {
             "target": C.TARGET,
+            "target_source": C.TARGET_SOURCE,
+            "legacy_target": C.LEGACY_TARGET,
             "group_key": C.GROUP_KEY,
             "categorical": [c for c in CATEGORICAL if c in df.columns],
             "groups": {"t1_static": t1_cols, "t2_timeseries": t2_cols,
@@ -124,8 +187,20 @@ def main(force: bool = False) -> None:
         leaked = [c for c in manifest["sets"]["full"]
                   if c.startswith("leaky_") or c in NON_FEATURES]
         assert not leaked, f"leaky or identifier columns reached the feature set: {leaked}"
-        log("[green]feature guard: no identifier, outcome or leaky_ column in any "
-            "feature set[/green]")
+
+        # Nothing describing the future may be a feature. Checked against the
+        # forward-target file's ACTUAL schema rather than a hardcoded prefix
+        # list, so adding a label column there cannot quietly create a feature
+        # here. Belt and braces: forward labels are not written into the model
+        # matrix at all, so this should be unreachable -- which is exactly when
+        # an assertion is worth having.
+        fwd_cols = set(forward_label_columns())
+        from_future = [c for c in manifest["sets"]["full"] if c in fwd_cols]
+        assert not from_future, (
+            f"forward-label columns reached the feature set: {from_future}")
+
+        log("[green]feature guard: no identifier, outcome, leaky_ or "
+            "forward-label column in any feature set[/green]")
 
     account_parquet("model matrix", C.MODEL_MATRIX_PQ)
 

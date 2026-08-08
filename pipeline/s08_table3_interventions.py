@@ -25,19 +25,31 @@ from .common import account_parquet, cached_stage, connect_duckdb, log
 # all-zero column, which is noise dressed up as a feature. Picking it up would
 # mean a second ETL path over prescriptions (3.5 GB), which the plan scopes as
 # a follow-on phase.
+#
+# Dobutamine is an INOTROPE, not a vasopressor: it raises cardiac output by
+# increasing contractility, and at low dose it tends to lower systemic
+# vascular resistance rather than raise it. Grouping it with the pressors
+# corrupted both the feature and -- via the vasopressor arm of target D -- the
+# label, so it gets its own group rather than being deleted. Nothing is lost;
+# the drug is simply filed correctly.
 DRUG_GROUPS: dict[str, str] = {
-    "vasopressor": r"norepinephrine|epinephrine|phenylephrine|vasopressin|dopamine|dobutamine",
+    "vasopressor": (r"norepinephrine|epinephrine|phenylephrine|vasopressin|dopamine"
+                    + ("" if C.SPLIT_INOTROPE else r"|dobutamine")),
     "sedative": r"propofol|midazolam|dexmedetomidine|lorazepam|ketamine",
     "opioid": r"fentanyl|morphine|hydromorphone|remifentanil",
     "paralytic": r"cisatracurium|rocuronium|vecuronium|succinylcholine",
 }
+if C.SPLIT_INOTROPE:
+    DRUG_GROUPS["inotrope"] = r"dobutamine|milrinone"
+
 ITEM_VENT_MODE = 223849
 
 
 def main(force: bool = False) -> None:
     sources = [C.INPUTEVENTS, C.D_ITEMS, C.T2_WIDE_PQ, C.TS_LONG_PQ]
     with cached_stage("s08_table3_interventions", sources=sources,
-                      output=C.T3_INTERV_PQ, force=force) as ran:
+                      output=C.T3_INTERV_PQ, force=force,
+                      extra=C.FP_INTERVENTIONS) as ran:
         if not ran:
             return
         con = connect_duckdb()
