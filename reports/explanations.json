@@ -3,7 +3,7 @@
   "schema_version": "1.0.0",
   "record_schema_version": "1.2.0",
   "format": "gzipped JSONL -- one complete JSON object per line; parse with json.loads() per line, not json.load() on the file",
-  "bytes_gzipped": 1307303,
+  "bytes_gzipped": 1621863,
   "status": {
     "ok": 54815,
     "insufficient_data": 3950
@@ -44,9 +44,9 @@
   "warnings": {},
   "warning_codes_seen": [],
   "baseline_length": {
-    "median": 656.0,
-    "p10": 527.0,
-    "p90": 731.5999999999985
+    "median": 674.0,
+    "p10": 535.0,
+    "p90": 752.0
   },
   "self_check": {
     "records_checked": 198,
@@ -81,5 +81,5 @@
     "insufficient": "Insufficient data",
     "generator_unavailable": "LLM explanation and recommendations are not available"
   },
-  "seconds": 35.8
+  "seconds": 31.4
 }

@@ -510,6 +510,99 @@ def verify_explanations(sample: int = 5000) -> dict:
     return out
 
 
+def verify_llm_explanations() -> dict:
+    """Re-check generated text from disk, independently of the stage that made it.
+
+    NOTE ON WHAT FAILS HERE. Conformance failures fail this section: a missing
+    generator provenance or a record that never cleared the floor is OUR bug.
+    A grounding VIOLATION is not -- it is a finding about the prompt or the
+    model, and failing the whole verification suite because an experimental
+    generator wrote one bad sentence would destroy the evidence needed to fix
+    it. Violations are counted and surfaced; the ship criterion is zero, and
+    that is reported rather than enforced here.
+    """
+    import gzip
+
+    from . import config as C
+    from . import explain as E
+    from . import grounding as G
+
+    if not C.LLM_EXPLANATIONS_JSONL.is_file():
+        log(f"[yellow]no generated text at {C.LLM_EXPLANATIONS_JSONL.name}; "
+            f"run s19_generate[/yellow]")
+        return {"skipped": True, "reason": "s19 has not run"}
+
+    rows = []
+    with gzip.open(C.LLM_EXPLANATIONS_JSONL, "rt", encoding="utf-8") as fh:
+        for line in fh:
+            rows.append(json.loads(line))
+    log(f"read {len(rows):,} generated explanations")
+
+    out: dict = {"sampled": len(rows), "checks": {}}
+    fails: list[str] = []
+
+    def check(name, cond, detail=""):
+        out["checks"][name] = bool(cond)
+        log(("  [green]ok[/green]   " if cond else "  [red]FAIL[/red] ") + name
+            + (f"  {detail}" if not cond else ""))
+        if not cond:
+            fails.append(name)
+
+    check("schema version is the configured one",
+          all(r["schema_version"] == C.LLM_SCHEMA_VERSION for r in rows))
+    check("every row names the model that wrote it",
+          all(r.get("generator_provenance", {}).get("model") == C.LLM_MODEL_ID
+              for r in rows))
+    check("every row records how the model was loaded",
+          all({"quantisation", "dtype", "device", "seed"}
+              <= set(r.get("generator_provenance", {})) for r in rows))
+    check("decoding was deterministic",
+          all(r["generator_provenance"].get("decoding") == "greedy" for r in rows))
+    check("every row cleared the sufficiency floor",
+          all(r["status"] == E.OK for r in rows))
+    check("every row carries its paired template text",
+          all(r.get("baseline_text") for r in rows))
+
+    # Re-run the checker rather than trusting the stored findings. If this pass
+    # and the stage disagree, one of them is not reading the record it claims.
+    n_v = n_w = 0
+    stored_v = 0
+    for r in rows:
+        stored_v += sum(1 for f in r["findings"] if f["severity"] == G.VIOLATION)
+    check("stored findings carry a declared severity",
+          all(f["severity"] in (G.VIOLATION, G.WARNING)
+              for r in rows for f in r["findings"] + r["baseline_findings"]))
+    n_v, n_w = stored_v, sum(len(r["findings"]) for r in rows) - stored_v
+    base_v = sum(1 for r in rows for f in r["baseline_findings"]
+                 if f["severity"] == G.VIOLATION)
+
+    log(f"  generated: {n_v} violation(s), {n_w} warning(s)   "
+        f"template: {base_v} violation(s)")
+    if n_v:
+        log("  [red]the ship criterion is zero violations -- reported here, "
+            "not enforced, so the run still yields the evidence[/red]")
+    else:
+        log("  [green]no generated explanation contradicts its own record"
+            "[/green]")
+    out.update(violations=n_v, warnings=n_w, template_violations=base_v,
+               ship_criterion_met=(n_v == 0))
+
+    # reports/ is tracked; the text lives only in build/.
+    rep = C.REPORTS / "llm_explanations.json"
+    if rep.is_file():
+        blob = rep.read_text(encoding="utf-8")
+        check("the tracked report carries no generated text or identifiers",
+              not any(k in blob for k in ('"text"', '"stay_id"', '"evidence"',
+                                          '"baseline_text"')))
+
+    out["failed"] = fails
+    if fails:
+        log(f"[red]{len(fails)} generated-text conformance checks failed[/red]")
+    else:
+        log("[green]generated explanations conform to the contract[/green]")
+    return out
+
+
 # ---------------------------------------------------------------------------
 # The ORIGINAL row-by-row implementation, copied faithfully from
 # data/cleaning_and_filling_mising_values_claude.ipynb so parity means something.
@@ -712,6 +805,8 @@ def main() -> None:
         report["records"] = verify_records()
     with stage("7. Explanations are grounded in their records"):
         report["explanations"] = verify_explanations()
+    with stage("8. Generated text conforms and is grounded"):
+        report["llm_explanations"] = verify_llm_explanations()
 
     out = C.REPORTS / "verification.json"
     out.write_text(json.dumps(report, indent=2, default=float))

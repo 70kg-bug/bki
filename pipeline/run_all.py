@@ -45,6 +45,13 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--with-training", action="store_true")
+    # s19 is behind its own flag rather than --with-training. It loads a 7B,
+    # needs ~15 GB of weights on disk and ~5.6 GB of VRAM, and takes minutes per
+    # hundred readings. Folding that into the standard training run would make
+    # every full rebuild depend on a GPU and a model download.
+    ap.add_argument("--with-llm", action="store_true",
+                    help="also generate explanations with the local LLM (slow, "
+                         "needs the weights and a GPU)")
     ap.add_argument("--trials", type=int, default=12)
     # CatBoost is excluded by default on HARDWARE grounds, not accuracy: its
     # GPU build ships no sm_120 kernels (CUDA error 218) and cannot compute
@@ -90,6 +97,13 @@ def main() -> None:
         # runs its adversarial suite against the grounding checker before it
         # emits anything, and fails the run if a corruption goes uncaught.
         s18_explain.main(force=a.force)
+
+    if a.with_llm:
+        from . import s19_generate
+        # s19 consumes the same records s18 does and is checked by the same
+        # grounding module, so it can run without --with-training as long as
+        # s17's records are current.
+        s19_generate.main(force=a.force)
 
 
 if __name__ == "__main__":
