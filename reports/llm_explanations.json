@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0.0",
+  "generated": 200,
+  "sample_allocation": {
+    "LOW": 50,
+    "MEDIUM": 50,
+    "HIGH": 50,
+    "CRITICAL": 50
+  },
+  "sampling": "equal allocation across bands, one reading per stay, seeded. Per-band rates are population rates; the overall figure is an unweighted mean across bands and is not.",
+  "generator_provenance": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "main",
+    "quantisation": "nf4",
+    "dtype": "torch.float16",
+    "device": "cuda:0",
+    "compute_capability": "sm_120",
+    "max_new_tokens": 220,
+    "seed": 20260808,
+    "decoding": "greedy",
+    "transformers": "4.57.6",
+    "torch": "2.11.0+cu128",
+    "bitsandbytes": "0.50.0"
+  },
+  "preflight": {
+    "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+    "compute_capability": "sm_120",
+    "vram_free_gb": 7.39,
+    "vram_total_gb": 8.55,
+    "hub_cache": "D:\\Dev\\Projects\\Pulsemind\\models\\llm\\hub",
+    "quantisation": "nf4",
+    "torch": "2.11.0+cu128",
+    "bitsandbytes": "0.50.0"
+  },
+  "prompt_sha256_16": "df62d941d8ee780c",
+  "llm": {
+    "violations": {},
+    "warnings": {
+      "POSSIBLE_TREND_CLAIM": 1,
+      "UNSUPPORTED_DRIVER": 7
+    },
+    "total_violations": 0,
+    "total_warnings": 8,
+    "median_chars": 546.0
+  },
+  "template": {
+    "violations": {},
+    "warnings": {},
+    "total_violations": 0,
+    "total_warnings": 0,
+    "median_chars": 605.0
+  },
+  "per_band": {
+    "LOW": {
+      "n": 50,
+      "llm_v": 0,
+      "llm_w": 0,
+      "base_v": 0,
+      "base_w": 0
+    },
+    "MEDIUM": {
+      "n": 50,
+      "llm_v": 0,
+      "llm_w": 1,
+      "base_v": 0,
+      "base_w": 0
+    },
+    "HIGH": {
+      "n": 50,
+      "llm_v": 0,
+      "llm_w": 2,
+      "base_v": 0,
+      "base_w": 0
+    },
+    "CRITICAL": {
+      "n": 50,
+      "llm_v": 0,
+      "llm_w": 5,
+      "base_v": 0,
+      "base_w": 0
+    }
+  },
+  "latency": {
+    "median_s": 18.063164710998535,
+    "p90_s": 26.99635167121887,
+    "total_s": 3908.111347913742,
+    "projected_full_set_hours": 294.85607617828583
+  },
+  "ship_criterion": "zero violations; reported, not asserted, so a failing run still yields the evidence to fix it",
+  "seconds": 3938.8,
+  "rechecked": "findings rescored from saved text; generation not re-run (greedy + fixed seed, so it would be identical)"
+}
