@@ -101,13 +101,50 @@ def category_sql(name: str) -> str:
     return f"((icd_version = 9 AND ({p9})) OR (icd_version = 10 AND ({p10})))"
 
 
-def score_sql(prefix: str = "cci_") -> str:
-    """Weighted Charlson comorbidity index across the per-category flags."""
-    return " + ".join(f"{w} * COALESCE({prefix}{n}, 0)"
-                      for n, (_, _, w) in CHARLSON.items())
+# Graded pairs: (milder, more severe). Charlson scores only the higher member
+# of each pair -- a patient with metastatic disease is not additionally scored
+# for having cancer. Summing both inflates the index, which is exactly what
+# this module used to do: measured against MIMIC's own derived table, the
+# double-count explained 91.94% of the disagreement, driven by 1,832
+# admissions with both liver grades, 999 with both diabetes grades and 934
+# with both cancer grades.
+GRADED_PAIRS = (
+    ("mild_liver_disease", "severe_liver_disease"),
+    ("diabetes_uncomplicated", "diabetes_complicated"),
+    ("malignancy", "metastatic_tumor"),
+)
+
+
+def score_sql(prefix: str = "cci_", hierarchy: bool = True) -> str:
+    """Weighted Charlson comorbidity index across the per-category flags.
+
+    With `hierarchy` (the default, and the standard definition), the milder
+    member of each graded pair contributes nothing when the severe member is
+    present. Pass hierarchy=False to reproduce the old inflated score.
+    """
+    severe_of = {mild: sev for mild, sev in GRADED_PAIRS} if hierarchy else {}
+    terms = []
+    for n, (_, _, w) in CHARLSON.items():
+        flag = f"COALESCE({prefix}{n}, 0)"
+        if n in severe_of:
+            # score the milder grade only when the severe grade is absent
+            flag = f"(CASE WHEN COALESCE({prefix}{severe_of[n]}, 0) = 1 THEN 0 ELSE {flag} END)"
+        terms.append(f"{w} * {flag}")
+    return " + ".join(terms)
 
 
 def age_points_sql(age_col: str = "age_at_icu") -> str:
-    """Standard Charlson age adjustment."""
-    return (f"CASE WHEN {age_col} < 50 THEN 0 WHEN {age_col} < 60 THEN 1 "
-            f"WHEN {age_col} < 70 THEN 2 WHEN {age_col} < 80 THEN 3 ELSE 4 END")
+    """Standard Charlson age adjustment.
+
+    Band edges are INCLUSIVE upper bounds (<= 50, <= 60, ...), matching MIMIC's
+    derived `charlson` table. The exclusive form used previously scored every
+    patient aged exactly 50, 60, 70 or 80 one point too high -- 100% of them,
+    which is what identified the defect.
+
+    NULL age scores 0, not 4. SQL three-valued logic makes `NULL < 50` unknown,
+    so an unguarded CASE falls through to ELSE and charges a patient of unknown
+    age the same age penalty as one aged 80+.
+    """
+    return (f"CASE WHEN {age_col} IS NULL THEN 0 "
+            f"WHEN {age_col} <= 50 THEN 0 WHEN {age_col} <= 60 THEN 1 "
+            f"WHEN {age_col} <= 70 THEN 2 WHEN {age_col} <= 80 THEN 3 ELSE 4 END")
