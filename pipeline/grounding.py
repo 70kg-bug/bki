@@ -48,11 +48,17 @@ VIOLATION, WARNING = "violation", "warning"
 # risk, so "risk of deterioration" is the band's meaning and must never be
 # flagged; "has been deteriorating" is a claim about the past that nothing in
 # the record can support. Hence `deteriorat(ing|ed)` and not `deterioration`.
+# NOTE: `since admission` was here and has been REMOVED. `hours_admit_to_icu` is
+# a real static feature and a frequent top contributor, so "the hours since
+# admission to ICU" is a generator correctly quoting the record, not a claim
+# about a trajectory. The alternative earned nothing: every genuine case
+# ("deteriorating since admission", "falling since admission") is already caught
+# by the directional verb, which is the part that carries the claim.
 _TREND = re.compile(
     r"\b(ris(ing|en)|rose|climb(ing|ed)|fall(ing|en)|fell|dropp(ing|ed)"
     r"|worsen(ing|ed)|improv(ing|ed|ement)|deteriorat(ing|ed)|escalat(ing|ed)"
     r"|progressively|gradually|trending|trajectory|steadily"
-    r"|up from|down from|over the (last|past)|since (admission|yesterday))\b",
+    r"|up from|down from|over the (last|past))\b",
     re.I)
 # Same idea, weaker evidence: these are ordinary words for attribution direction
 # ("PEEP increases the estimate") as often as for change over time, so they are
@@ -285,9 +291,15 @@ def check(record: dict, text: str, *, display: dict,
         # ("PEEP 5 cmH2O (raises the score, 21% of it)"), so a number that is
         # allowed globally is not evidence of a mis-binding.
         if own and not _matches(v, dec, own) and not _matches(v, dec, allowed):
+            # Report the VALUE, not min(own): `own` also holds the age, and a
+            # freshly measured parameter has age 0, so the old message read
+            # "SpO2 is 0 in the record" for a parameter that was 97%.
+            actual = _num(entry.get("value"))
             f.append(Finding(
                 PARAM_VALUE_MISMATCH, VIOLATION,
-                f"{label} is {sorted(own)[0]:g} in the record, text states {v:g}",
+                (f"{label} is {actual:g} in the record, text states {v:g}"
+                 if actual is not None
+                 else f"{label} has no value in the record, text states {v:g}"),
                 text[_s:min(len(text), window)].strip()))
 
     # 3 -- the band named must be the band displayed.
