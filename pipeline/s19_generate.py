@@ -101,21 +101,40 @@ def _tally(findings) -> tuple[Counter, Counter]:
     return v, w
 
 
-def main(force: bool = False, sample: int | None = None) -> None:
+def evidence_hash(with_evidence: bool = True) -> str:
+    """Identity of the retrieval configuration this run generated under.
+
+    Appended at the CALL SITE, exactly like prompt_hash and for the same reason:
+    an explanation must never be attachable to a different corpus. Both the
+    corpus manifest and the on/off state are in it, so `--no-evidence` and
+    `--with-evidence` cannot share a cache entry -- which is the entire point,
+    since the pass exists to compare them.
+    """
+    if not with_evidence or not C.EVIDENCE_MAP_JSON.exists():
+        return "no-evidence"
+    m = json.loads(C.EVIDENCE_MAP_JSON.read_text(encoding="utf-8"))
+    return f"ev:{m.get('corpus_manifest_hash', '?')}:{m.get('schema_version', '?')}"
+
+
+def main(force: bool = False, sample: int | None = None,
+         with_evidence: bool = True) -> None:
     with cached_stage("s19_generate",
                       sources=[C.RECORDS_JSONL],
                       output=C.LLM_EXPLANATIONS_JSONL, force=force,
-                      extra=C.FP_GENERATE + (prompt_hash(),)) as ran:
+                      extra=C.FP_GENERATE + (prompt_hash(),
+                                             evidence_hash(with_evidence))) as ran:
         if not ran:
             return
-        _run(sample)
+        _run(sample, with_evidence)
 
 
-def _run(sample: int | None = None) -> None:
+def _run(sample: int | None = None, with_evidence: bool = True) -> None:
     report: dict = {}
     t0 = time.time()
-    pol = policy()
+    pol = policy(with_evidence=with_evidence)
     n_want = sample or C.LLM_SAMPLE
+    log(f"retrieval: {evidence_hash(with_evidence)}"
+        + (f"  ({len(pol.evidence)} keys)" if pol.evidence else "  (baseline, no RAG)"))
 
     with stage("Capability check -- toolchain present, and room to load"):
         pf = G.capability_check()
@@ -150,6 +169,8 @@ def _run(sample: int | None = None) -> None:
 
     with stage("Generate, verify, and pair against the template floor"):
         rows = []
+        ev_hash = evidence_hash(with_evidence)
+        ctx_n = act_n = 0
         v_llm, w_llm, v_base, w_base = Counter(), Counter(), Counter(), Counter()
         per_band = defaultdict(lambda: {"n": 0, "llm_v": 0, "llm_w": 0,
                                         "base_v": 0, "base_w": 0})
@@ -158,9 +179,9 @@ def _run(sample: int | None = None) -> None:
             blk = E.explain(r, pol, generator=gen,
                             generator_name=C.LLM_MODEL_ID)
             text = blk["text"]
-            f_llm = check(r, text)
+            f_llm = check(r, text, pol)
             base = E.baseline(r, pol)
-            f_base = check(r, base)
+            f_base = check(r, base, pol)
 
             a, b = _tally(f_llm); v_llm += a; w_llm += b
             c, d = _tally(f_base); v_base += c; w_base += d
@@ -170,6 +191,8 @@ def _run(sample: int | None = None) -> None:
             pb["llm_v"] += sum(a.values()); pb["llm_w"] += sum(b.values())
             pb["base_v"] += sum(c.values()); pb["base_w"] += sum(d.values())
             llm_len.append(len(text)); base_len.append(len(base))
+            ctx_n += len(blk["guideline_context"])
+            act_n += len(blk["suggested_actions"])
 
             rows.append({
                 "schema_version": C.LLM_SCHEMA_VERSION,
@@ -183,6 +206,12 @@ def _run(sample: int | None = None) -> None:
                 "findings": [f.to_json() for f in f_llm],
                 "baseline_text": base,
                 "baseline_findings": [f.to_json() for f in f_base],
+                # Assembled by code, not written by the model. Recorded on the
+                # line so verify.py can re-check byte identity against the
+                # corpus without re-running retrieval.
+                "guideline_context": blk["guideline_context"],
+                "suggested_actions": blk["suggested_actions"],
+                "evidence_hash": ev_hash,
             })
             if i % 25 == 0 or i == len(recs):
                 rate = np.mean(gen.latencies) if gen.latencies else 0.0
@@ -231,6 +260,16 @@ def _run(sample: int | None = None) -> None:
             generator_provenance=gen.provenance,
             preflight=pf,
             prompt_sha256_16=prompt_hash(),
+            retrieval=dict(
+                evidence_hash=ev_hash,
+                enabled=bool(pol.evidence),
+                keys_available=len(pol.evidence or {}),
+                context_passages_attached=ctx_n,
+                action_statements_attached=act_n,
+                note=("guideline_context and suggested_actions are ASSEMBLED "
+                      "from the frozen evidence map, never generated. The model "
+                      "sees guideline_context only, and is told not to restate "
+                      "it; suggested_actions never enters the prompt.")),
             llm=dict(violations=dict(v_llm), warnings=dict(w_llm),
                      total_violations=tv, total_warnings=sum(w_llm.values()),
                      median_chars=float(np.median(llm_len))),
@@ -267,14 +306,22 @@ def recheck() -> None:
         for line in fh:
             rows.append(json.loads(line))
     recs = {(r["stay_id"], r["charttime"]): r for r in records()}
+    # Rescore under the retrieval configuration the text was GENERATED under,
+    # not under whatever is on disk now. Rescoring RAG output without evidence
+    # would report every quoted threshold as a fabricated number and read as a
+    # catastrophic regression that never happened.
+    was_rag = any(row.get("guideline_context") for row in rows)
+    pol = policy(with_evidence=was_rag)
+    log(f"rechecking {len(rows)} rows with evidence="
+        f"{'on' if was_rag else 'off'} (as generated)")
 
     v_llm, w_llm, v_base, w_base = Counter(), Counter(), Counter(), Counter()
     per_band = defaultdict(lambda: {"n": 0, "llm_v": 0, "llm_w": 0,
                                     "base_v": 0, "base_w": 0})
     for row in rows:
         rec = recs[(row["stay_id"], row["charttime"])]
-        f_llm = check(rec, row["text"])
-        f_base = check(rec, row["baseline_text"])
+        f_llm = check(rec, row["text"], pol)
+        f_base = check(rec, row["baseline_text"], pol)
         row["findings"] = [f.to_json() for f in f_llm]
         row["baseline_findings"] = [f.to_json() for f in f_base]
         a, b = _tally(f_llm); v_llm += a; w_llm += b
@@ -325,6 +372,13 @@ def show(k: int) -> None:
                   f"template {len(r['baseline_findings'])}")
             print("\n--- LLM ---\n" + r["text"])
             print("\n--- template ---\n" + r["baseline_text"])
+            for blk, title in (("guideline_context", "guideline context"),
+                               ("suggested_actions", "suggested actions")):
+                for e in r.get(blk) or ():
+                    grade = (f" [{e['strength']}, {e['certainty']} certainty]"
+                             if e.get("strength") else "")
+                    print(f"\n--- {title} ({e['parameter']}){grade} ---")
+                    print(f"  \"{e['quote']}\"\n  -- {e['citation']}")
             for f in r["findings"]:
                 print(f"\n  [{f['severity']}] {f['code']}: {f['message']}")
             shown += 1
@@ -347,6 +401,9 @@ if __name__ == "__main__":
     _ap.add_argument("--recheck", action="store_true",
                      help="rescore saved generations with the current checker; "
                           "no model, no GPU, no regeneration")
+    _ap.add_argument("--no-evidence", action="store_true",
+                     help="generate WITHOUT retrieval -- the paired baseline "
+                          "this pass is measured against")
     _a = _ap.parse_args()
     if _a.preflight:
         print(json.dumps(G.preflight(), indent=2))
@@ -355,4 +412,5 @@ if __name__ == "__main__":
     elif _a.show:
         show(_a.show)
     else:
-        main(force=_a.force or bool(_a.sample), sample=_a.sample)
+        main(force=_a.force or bool(_a.sample), sample=_a.sample,
+             with_evidence=not _a.no_evidence)

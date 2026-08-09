@@ -32,16 +32,29 @@
     "torch": "2.11.0+cu128",
     "bitsandbytes": "0.50.0"
   },
-  "prompt_sha256_16": "df62d941d8ee780c",
+  "prompt_sha256_16": "a8a5fb725b1c6db5",
+  "retrieval": {
+    "evidence_hash": "ev:62b9e550fc137800:1.0.0",
+    "enabled": true,
+    "keys_available": 57,
+    "context_passages_attached": 200,
+    "action_statements_attached": 398,
+    "note": "guideline_context and suggested_actions are ASSEMBLED from the frozen evidence map, never generated. The model sees guideline_context only, and is told not to restate it; suggested_actions never enters the prompt."
+  },
   "llm": {
-    "violations": {},
-    "warnings": {
-      "POSSIBLE_TREND_CLAIM": 1,
-      "UNSUPPORTED_DRIVER": 7
+    "violations": {
+      "TREND_CLAIM": 3,
+      "FABRICATED_NUMBER": 1,
+      "IMPUTED_QUOTED": 1
     },
-    "total_violations": 0,
-    "total_warnings": 8,
-    "median_chars": 546.0
+    "warnings": {
+      "POSSIBLE_TREND_CLAIM": 24,
+      "UNSUPPORTED_DRIVER": 16,
+      "POSSIBLE_BAND_MISMATCH": 1
+    },
+    "total_violations": 5,
+    "total_warnings": 41,
+    "median_chars": 583.5
   },
   "template": {
     "violations": {},
@@ -54,39 +67,38 @@
     "LOW": {
       "n": 50,
       "llm_v": 0,
-      "llm_w": 0,
+      "llm_w": 11,
       "base_v": 0,
       "base_w": 0
     },
     "MEDIUM": {
       "n": 50,
-      "llm_v": 0,
-      "llm_w": 1,
+      "llm_v": 2,
+      "llm_w": 6,
       "base_v": 0,
       "base_w": 0
     },
     "HIGH": {
       "n": 50,
-      "llm_v": 0,
-      "llm_w": 2,
+      "llm_v": 2,
+      "llm_w": 17,
       "base_v": 0,
       "base_w": 0
     },
     "CRITICAL": {
       "n": 50,
-      "llm_v": 0,
-      "llm_w": 5,
+      "llm_v": 1,
+      "llm_w": 7,
       "base_v": 0,
       "base_w": 0
     }
   },
   "latency": {
-    "median_s": 18.063164710998535,
-    "p90_s": 26.99635167121887,
-    "total_s": 3908.111347913742,
-    "projected_full_set_hours": 294.85607617828583
+    "median_s": 18.248928904533386,
+    "p90_s": 23.31189858913421,
+    "total_s": 3831.5244600772858,
+    "projected_full_set_hours": 297.8884186319179
   },
   "ship_criterion": "zero violations; reported, not asserted, so a failing run still yields the evidence to fix it",
-  "seconds": 3938.8,
-  "rechecked": "findings rescored from saved text; generation not re-run (greedy + fixed seed, so it would be identical)"
+  "seconds": 3868.4
 }

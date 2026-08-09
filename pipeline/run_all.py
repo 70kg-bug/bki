@@ -52,6 +52,13 @@ def main() -> None:
     ap.add_argument("--with-llm", action="store_true",
                     help="also generate explanations with the local LLM (slow, "
                          "needs the weights and a GPU)")
+    # Same precedent as --with-llm: a stage that depends on a download gets its
+    # own flag. s20/s21 need no GPU and take about 30 s, but the dense channel
+    # pulls ~880 MB of MedCPT weights on first run, and a full rebuild should
+    # not silently start downloading models.
+    ap.add_argument("--with-rag", action="store_true",
+                    help="also build the guideline corpus and the evidence map "
+                         "(s20, s21; downloads MedCPT on first run)")
     ap.add_argument("--trials", type=int, default=12)
     # CatBoost is excluded by default on HARDWARE grounds, not accuracy: its
     # GPU build ships no sm_120 kernels (CUDA error 218) and cannot compute
@@ -74,6 +81,15 @@ def main() -> None:
 
     accounting_table()
     log(f"data pipeline finished in {time.time() - t0:.0f}s")
+
+    # BEFORE the training block, not after it. s18 and s19 both read the evidence
+    # map when one exists, so building it later would leave explanations checked
+    # against a map that does not match the report sitting beside them. The
+    # corpus depends on nothing else in the pipeline, so it can go first.
+    if a.with_rag:
+        from . import s20_corpus, s21_evidence
+        s20_corpus.main(force=a.force)
+        s21_evidence.main(force=a.force)
 
     if a.with_training:
         from . import (s11_train, s12_baselines, s13_calibrate, s15_target_compare,

@@ -31,6 +31,9 @@ PARAM_VALUE_MISMATCH = "PARAM_VALUE_MISMATCH"
 IMPUTED_QUOTED = "IMPUTED_QUOTED"
 BAND_MISMATCH = "BAND_MISMATCH"
 TREND_CLAIM = "TREND_CLAIM"
+ALTERED_QUOTE = "ALTERED_QUOTE"
+UNCITED_QUOTE = "UNCITED_QUOTE"
+DEFINITION_CONFLATION = "DEFINITION_CONFLATION"
 # -------------------------------------------------------------------- warnings
 POSSIBLE_BAND_MISMATCH = "POSSIBLE_BAND_MISMATCH"
 POSSIBLE_TREND_CLAIM = "POSSIBLE_TREND_CLAIM"
@@ -82,6 +85,33 @@ _NUMBER = re.compile(r"(?<![\w.])(\d[\d,]*(?:\.\d+)?)")
 # Sentence boundary. Requires whitespace after the punctuation so decimals
 # ("4.2 h ago") are not treated as sentence ends.
 _SENT = re.compile(r"[.;]\s+")
+
+# Claiming the reading MEETS a surveillance definition. This is its own code
+# rather than a special case of anything else because it is the specific false
+# statement this corpus invites: NHSN's VAC criteria are literally about PEEP
+# and FiO2 rises, which are two of this model's top contributors, so retrieval
+# surfaces them constantly. The thresholds are shared PROVENANCE; the statistic
+# is not -- the label reads a forward maximum where NHSN reads a two-day daily
+# minimum, so "this reading meets the NHSN VAC definition" is false no matter
+# how high the score is. Standing rule, recorded in .claude/rules/results.md.
+_DEFINITION = re.compile(
+    r"\b(?:meets?|met|satisf(?:y|ies|ied)|fulfil(?:s|led)?|qualifies as|consistent with"
+    r"|constitutes?|diagnos(?:ed|tic) (?:of|with)|has|represents?)\s+"
+    r"(?:the\s+|an?\s+|criteria\s+for\s+|a\s+case\s+of\s+)*"
+    r"(?:NHSN\s+)?"
+    r"(?:VAE|VAC|IVAC|PVAP|VAP\b"
+    r"|ventilator[- ]associated\s+(?:event|condition|pneumonia|complication))",
+    re.I)
+
+# How many consecutive words shared with a retrieved passage count as quoting
+# rather than coincidence. Below this, ordinary clinical phrasing collides:
+# "assessment of PEEP and auto-PEEP" is five words that any correct sentence
+# about this record might contain.
+_QUOTE_RUN_WORDS = 7
+# How much surrounding text must reproduce the passage before a number sitting
+# in it counts as part of a quotation rather than as the generator's own figure.
+_QUOTE_CONTEXT_WORDS = 5
+_WORD = re.compile(r"[^\W_]+", re.UNICODE)
 
 
 @dataclass(frozen=True, slots=True)
@@ -221,18 +251,88 @@ def _param_spans(text: str, display: dict) -> list[tuple[str, int, int]]:
     return sorted(spans, key=lambda t: t[1])
 
 
+def _word_spans(text: str) -> list[tuple[str, int, int]]:
+    return [(m.group(0).lower(), m.start(), m.end()) for m in _WORD.finditer(text)]
+
+
+def quoted_spans(text: str, evidence) -> list[dict]:
+    """Character ranges of `text` that reproduce a retrieved passage.
+
+    A run of at least _QUOTE_RUN_WORDS consecutive words shared with a passage.
+    Nothing fuzzy: the words must match in order, so the model cannot earn quote
+    status by paraphrasing, and the exemptions below cannot be talked into.
+    """
+    out: list[dict] = []
+    tw = _word_spans(text)
+    for ev in evidence or ():
+        ew = [w for w, _s, _e in _word_spans(ev.get("text", ""))]
+        if len(ew) < _QUOTE_RUN_WORDS:
+            continue
+        # every start position in the passage, by first word, for a linear scan
+        index: dict[str, list[int]] = {}
+        for j, w in enumerate(ew):
+            index.setdefault(w, []).append(j)
+        i = 0
+        while i < len(tw):
+            best = 0
+            for j in index.get(tw[i][0], ()):
+                n = 0
+                while (i + n < len(tw) and j + n < len(ew)
+                       and tw[i + n][0] == ew[j + n]):
+                    n += 1
+                best = max(best, n)
+            if best >= _QUOTE_RUN_WORDS:
+                out.append({"start": tw[i][1], "end": tw[i + best - 1][2],
+                            "words": best, "evidence": ev})
+                i += best
+            else:
+                i += 1
+    return out
+
+
+def _in_quote(pos: int, spans: list[dict]) -> bool:
+    return any(s["start"] <= pos < s["end"] for s in spans)
+
+
 def check(record: dict, text: str, *, display: dict,
-          band_names: tuple[str, ...]) -> list[Finding]:
-    """Every decidable disagreement between `text` and `record`."""
+          band_names: tuple[str, ...], evidence=()) -> list[Finding]:
+    """Every decidable disagreement between `text` and `record`.
+
+    `evidence` is the retrieved passages attached to this reading, passed AS
+    DATA exactly like `display` and `band_names` -- this module still imports
+    nothing from explain.py, and still re-derives everything from the record.
+
+    WHAT EVIDENCE CHANGES, AND WHAT IT DELIBERATELY DOES NOT
+    -------------------------------------------------------
+    Inside a span that reproduces a retrieved passage verbatim, the generator is
+    a CONDUIT rather than an author: "PEEP 5 to 15 cm H2O" published by the AARC
+    is not a claim about this patient's PEEP, and checks 1, 2, 5, 6 and 7 would
+    each raise a false accusation against it. Those checks stand down inside such
+    a span and nowhere else.
+
+    `allowed_numbers` is NOT widened, and that is the load-bearing decision.
+    Line 293 below tests `not _matches(v, dec, own) and not _matches(v, dec,
+    allowed)` -- one set feeding two checks -- so admitting 5 globally as a
+    guideline PEEP threshold would simultaneously make "SpO2 5" legal. Scoping
+    the exemption to located spans instead keeps every number the model writes in
+    its OWN prose subject to the original rule, whether or not some guideline
+    happens to contain it.
+
+    The exemption cannot be gamed, because the span has to match published text
+    word for word to exist at all.
+    """
     f: list[Finding] = []
     if not text or not text.strip():
         return [Finding("EMPTY_TEXT", VIOLATION, "no explanation text")]
 
     allowed = allowed_numbers(record, display)
     nums = _text_numbers(text)
+    quotes = quoted_spans(text, evidence)
 
     # 1 -- numbers that are in no field of the record.
     for v, dec, pos, _pct in nums:
+        if _in_quote(pos, quotes):
+            continue
         if not _matches(v, dec, allowed):
             f.append(Finding(
                 FABRICATED_NUMBER, VIOLATION,
@@ -243,7 +343,11 @@ def check(record: dict, text: str, *, display: dict,
     # Bound = the first number after the label and before the next label, within
     # a window. Conservative on purpose: a missed binding is a missed check, a
     # wrong binding is a false accusation.
-    spans = _param_spans(text, display)
+    # A parameter NAME inside a verbatim quotation is the guideline's word, not
+    # the generator binding a value to this patient. Dropped from `spans` here
+    # rather than skipped in each of checks 2, 5 and 6 -- one exclusion, three
+    # checks, no chance of them disagreeing about what counts as quoted.
+    spans = [s for s in _param_spans(text, display) if not _in_quote(s[1], quotes)]
     tel = record["telemetry"]
     for i, (p, _s, e) in enumerate(spans):
         nxt = spans[i + 1][1] if i + 1 < len(spans) else len(text)
@@ -360,11 +464,102 @@ def check(record: dict, text: str, *, display: dict,
     # 7 -- treatment language. Reported, never blocked: recommendations are a
     # separate black-box concern that does not influence the assessment, so this
     # exists to make their presence countable rather than to prevent them.
+    # Exempt inside a quotation: a graded recommendation says "assess" and
+    # "wean" because that is what a recommendation is.
     for m in _TREATMENT.finditer(text):
+        if _in_quote(m.start(), quotes):
+            continue
         f.append(Finding(TREATMENT_LANGUAGE, WARNING,
                          f"'{m.group(0)}' is intervention language",
                          text[max(0, m.start() - 40):m.end() + 20].strip()))
+
+    # 8 -- a quotation that is not quite the passage.
+    #
+    # THE failure mode of a quote-only design, and the reason it needs its own
+    # code. A fabricated number is caught by check 1 -- but only while it stays
+    # fabricated. Drift a threshold onto a value the record DOES contain, inside
+    # otherwise faithful guideline prose, and every existing check passes: the
+    # number is allowed, the binding is consistent, and the sentence now carries
+    # a citation asserting a professional society published it.
+    #
+    # Detected by POSITIONAL ALIGNMENT rather than by sentence overlap. A
+    # drifted number breaks the word run by definition -- that is what makes it
+    # drift -- so it never sits inside one of the spans above. A sentence-level
+    # overlap test was the first attempt and it has a structural hole: the
+    # sentence splitter cuts on ". ", so drifting a list enumerator turns
+    # "2. Pulse oximetry should ..." into the fragment "... states: 9." whose
+    # overlap with the passage is near zero, and 92 of 124 mutations walked
+    # straight through it.
+    #
+    # Aligning the WORDS AROUND each number has no such hole: if the context
+    # either side of a number reproduces the passage but the number does not,
+    # the number was altered, wherever it sits and whatever the punctuation
+    # around it. This is ClinicBot's "numeric thresholds must match retrieved
+    # values exactly via string matching", generalised from table cells to prose.
+    for ev in evidence or ():
+        src = ev.get("text", "")
+        if not src:
+            continue
+        ew = [w for w, _s, _e in _word_spans(src)]
+        src_num_at = {j: w for j, w in enumerate(ew) if _NUMBER.fullmatch(w)}
+        if not src_num_at:
+            continue
+        tw = _word_spans(text)
+        for i, (w, s, e) in enumerate(tw):
+            if not _NUMBER.fullmatch(w):
+                continue
+            for j, sw in src_num_at.items():
+                if sw == w:
+                    continue                      # faithfully reproduced
+                left = right = 0
+                while (i - left - 1 >= 0 and j - left - 1 >= 0
+                       and tw[i - left - 1][0] == ew[j - left - 1]):
+                    left += 1
+                while (i + right + 1 < len(tw) and j + right + 1 < len(ew)
+                       and tw[i + right + 1][0] == ew[j + right + 1]):
+                    right += 1
+                if left + right < _QUOTE_CONTEXT_WORDS:
+                    continue
+                f.append(Finding(
+                    ALTERED_QUOTE, VIOLATION,
+                    f"{w} sits in {left + right} words reproducing "
+                    f"{ev.get('citation', 'a retrieved passage')} where that "
+                    f"passage reads {sw}",
+                    text[max(0, s - 60):min(len(text), e + 60)].strip()))
+                break
+
+    # 9 -- a quotation with nothing saying where it came from.
+    for q in quotes:
+        cite = q["evidence"].get("citation", "")
+        window = text[max(0, q["start"] - 200):min(len(text), q["end"] + 200)]
+        if cite and not _cite_present(window, cite):
+            f.append(Finding(
+                UNCITED_QUOTE, VIOLATION,
+                f"{q['words']} consecutive words reproduce a retrieved passage "
+                f"with no attribution nearby; it should cite {cite}",
+                text[q["start"]:q["end"]].strip()))
+
+    # 10 -- claiming the reading meets a surveillance definition.
+    for m in _DEFINITION.finditer(text):
+        f.append(Finding(
+            DEFINITION_CONFLATION, VIOLATION,
+            f"'{m.group(0).strip()}' asserts this reading meets a surveillance "
+            f"definition; NHSN supplied the thresholds only, and the label "
+            f"inverts the statistic (forward maximum vs two-day daily minimum)",
+            text[max(0, m.start() - 40):m.end() + 30].strip()))
     return f
+
+
+def _cite_present(window: str, citation: str) -> bool:
+    """Is this citation acknowledged nearby?
+
+    Matched on the issuing body rather than on the full string: a clinician
+    reading "the AARC guideline recommends" knows the source, and demanding
+    "AARC CPG, Respir Care 2024;69(8):1042-1054" verbatim inside three sentences
+    of prose would fail every correct attribution.
+    """
+    toks = [t for t in _WORD.findall(citation) if len(t) > 3 and not t.isdigit()]
+    return any(re.search(rf"\b{re.escape(t)}\b", window, re.I) for t in toks[:3])
 
 
 def _is_value_form(feature: str, param: str | None) -> bool:

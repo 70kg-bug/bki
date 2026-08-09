@@ -91,6 +91,13 @@ class Policy:
     insufficient_text: str
     unavailable_text: str
     contributor_k: int = 5
+    # The frozen evidence map (s21), as data. None when Pulsemind is running
+    # without retrieval, which must stay a supported configuration: the whole
+    # chain is measured against a no-RAG baseline, and a module that cannot
+    # produce the baseline cannot be compared to it.
+    evidence: dict | None = None
+    context_k: int = 1
+    actions_k: int = 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -189,6 +196,112 @@ def format_value(param: str, value, display: dict) -> str:
 
 
 # --------------------------------------------------------------------------
+# Retrieved evidence -- ASSEMBLED, never generated
+# --------------------------------------------------------------------------
+# This is the whole answer to the hallucination problem, and it is structural
+# rather than statistical. Pulsemind's output has three parts with three
+# different provenances:
+#
+#   explanation        written by the LLM, checked by grounding.check as before
+#   guideline_context  assembled HERE, verbatim from the corpus, with a citation
+#   suggested_actions  assembled HERE, verbatim graded statements with a citation
+#
+# The model never authors the quoted text. The complete set of actions the
+# system can ever emit is finite, published, cited and short enough that a
+# clinician can read all of it in one sitting -- which is a far stronger safety
+# argument than a violation count on a sample.
+#
+# What remains, stated rather than hidden: a verbatim statement can still be
+# INAPPLICABLE to this patient. That is a relevance failure, not a fabrication.
+# It is handled by keying actions on (band, parameter), by labelling the block
+# as general guideline context rather than patient-specific instruction, and by
+# the clinician-in-the-loop framing that is already the product's premise.
+def _param_sequence(record: dict, policy: Policy) -> list[str]:
+    """Frozen parameters behind this reading's contributors, strongest first."""
+    seen: list[str] = []
+    for c in record["contributors"]:
+        p, _suf = split_feature(c["feature"], policy.display)
+        if p and p not in seen:
+            seen.append(p)
+    return seen
+
+
+def _entry(policy: Policy, key: str) -> dict | None:
+    ent = (policy.evidence or {}).get(key)
+    # A key whose passages were suppressed at review is present and empty. That
+    # is deliberate -- a missing key has to be visible as missing rather than
+    # indistinguishable from a key that was never asked for.
+    return ent if ent and ent.get("passages") else None
+
+
+def select_evidence(record: dict, policy: Policy) -> tuple[list[dict], list[dict]]:
+    """(guideline_context, suggested_actions) for this reading. Pure lookup.
+
+    No retrieval happens here and none can: s21 materialised every possible
+    result at build time, a human reviewed them, and this is a dict lookup.
+    That is what makes the explanation layer deterministic end to end -- the
+    same discipline as the greedy fixed-seed decode, for the same reason.
+    """
+    if not policy.evidence:
+        return [], []
+    band = record["band"]["displayed"]
+    params = _param_sequence(record, policy)
+
+    context: list[dict] = []
+    for p in params:
+        ent = _entry(policy, f"context:{p}")
+        if not ent:
+            continue
+        for psg in ent["passages"]:
+            context.append({
+                "chunk_id": psg["chunk_id"],
+                "parameter": policy.display[p][0],
+                # VERBATIM and load-bearing: grounding.check compares against
+                # this exact string. Nothing may reformat, trim or re-wrap it.
+                "quote": psg["text"],
+                "citation": psg["citation"],
+                "section": " > ".join(psg["heading_path"]) or None,
+                # NHSN defines the vocabulary the thresholds came from. It does
+                # NOT describe this patient, and the distinction has its own
+                # violation code because this corpus invites exactly that error.
+                "this_is": ("published definition of the measurement; it is not "
+                            "a statement about this patient"),
+            })
+        if len(context) >= policy.context_k:
+            break
+
+    context = context[: policy.context_k]
+    # Deduped against the context block, and against itself. The two channels
+    # draw from one corpus, so the best definitional passage for SpO2 and the
+    # best LOW-band action for SpO2 are frequently the same protocol step --
+    # which reached the clinician as the identical sentence printed twice under
+    # two different headings. Context wins the tie because it is what the model
+    # is shown; actions keep scanning for the next distinct statement.
+    used = {c["chunk_id"] for c in context}
+    actions: list[dict] = []
+    for p in params:
+        ent = _entry(policy, f"action:{band}:{p}")
+        if not ent:
+            continue
+        for psg in ent["passages"]:
+            if psg["chunk_id"] in used:
+                continue
+            used.add(psg["chunk_id"])
+            actions.append({
+                "chunk_id": psg["chunk_id"],
+                "parameter": policy.display[p][0],
+                "quote": psg["text"],
+                "citation": psg["citation"],
+                "strength": psg["strength"],
+                "certainty": psg["certainty"],
+                "applies_to": f"band {band}",
+            })
+        if len(actions) >= policy.actions_k:
+            break
+    return context, actions[: policy.actions_k]
+
+
+# --------------------------------------------------------------------------
 # The payload
 # --------------------------------------------------------------------------
 def build_payload(record: dict, policy: Policy) -> dict:
@@ -268,7 +381,8 @@ def build_payload(record: dict, policy: Policy) -> dict:
             "imputed": imputed,
         })
 
-    return {
+    context, _actions = select_evidence(record, policy)
+    payload = {
         "band": {
             "name": band["displayed"],
             "state": band["state"],
@@ -298,6 +412,20 @@ def build_payload(record: dict, policy: Policy) -> dict:
                      "direction any value has been moving"),
         },
     }
+    # LAST, and the position is evidence-based rather than arbitrary. MedRAG
+    # measures a U-shaped "lost in the middle" curve over snippet position:
+    # accuracy is worst when the needed passage sits mid-context. render_prompt
+    # serialises this dict in insertion order, so appending here puts the
+    # evidence adjacent to the generation point.
+    #
+    # `suggested_actions` is deliberately NOT here. The model needs the
+    # definitional context to frame its prose -- that is what makes this RAG --
+    # but it has no use for the action list, and putting a list of imperative
+    # sentences in front of it maximises the chance it restates one as its own
+    # advice. The actions are assembled and returned beside the text instead.
+    if context:
+        payload["guideline_context"] = context
+    return payload
 
 
 # The prohibitions alone produced text that broke no rule and said very little:
@@ -308,6 +436,15 @@ def build_payload(record: dict, policy: Policy) -> dict:
 SYSTEM_PROMPT = """\
 You explain a ventilation risk assessment to an ICU clinician. You are given a \
 structured record and you may state ONLY what is in it.
+
+The record may end with a "guideline_context" block: published text about what a \
+measurement IS, quoted verbatim with its citation. It is there so you know which \
+guideline concept is in play. It is DISPLAYED TO THE CLINICIAN SEPARATELY, \
+already quoted and already cited, so do not reproduce it, do not paraphrase it, \
+and do not repeat any number that appears only inside it. Those numbers are \
+published thresholds, not this patient's readings, and writing one next to a \
+parameter name states it as this patient's value. You may say in your own words \
+that a published definition applies to a measurement -- nothing more.
 
 YOU MUST INCLUDE, in this order:
 
@@ -330,6 +467,12 @@ as it appears. Do NOT convert, re-round, add or average any number: the record \
 is arithmetic-free by design and every figure you need is present in the form \
 you should say it.
 
+Never compare two figures arithmetically. Not "46% lower than the cohort", not \
+"half the base rate", not "twice as likely" -- every one of those is a number \
+you computed, and it is wrong as often as not. Put both figures side by side in \
+plain words ("3.8% in this band, against 8.3% across the cohort") and let the \
+reader draw the comparison.
+
 Name a parameter as a contributor ONLY if it appears in the contributors list, \
 and give each one its own share exactly as written. Never group several \
 parameters behind one figure, never combine or apportion shares between them, \
@@ -337,7 +480,13 @@ and never say "respectively".
 
 YOU MUST NOT, and all of this is checked mechanically after you answer:
 
-- State any number that is not in the record.
+- State any number that is not in the record, or any number that appears only \
+inside guideline_context.
+- Say that this reading meets, satisfies or is consistent with any surveillance \
+definition -- VAE, VAC, IVAC, PVAP, VAP or ventilator-associated anything. \
+Pulsemind borrowed some thresholds from that standard; it does not compute it, \
+and it measures a different statistic over a different window. This reading is \
+a model score, never a surveillance determination or a diagnosis.
 - Say which direction any value has been moving. The model has no trend inputs, \
 so "rising", "falling", "worsening" and "improving" are unsupported. The risk \
 itself is forward-looking; the measurements are not.
@@ -346,7 +495,13 @@ itself is forward-looking; the measurements are not.
 - Describe a value charted hours ago as a current reading.
 
 Write three to five plain sentences for a clinician reading at the bedside. No \
-preamble, no bullet points, no restating these instructions.\
+preamble, no bullet points, no restating these instructions.
+
+The "constraints" block is an instruction to you, not content to report. Never \
+tell the reader what you are unable to say. Writing "I cannot comment on \
+whether values have been rising or falling" spends a sentence on the tool's \
+limitations instead of the patient, and it puts the very words you were told to \
+avoid in front of a clinician. Say what IS known and stop.\
 """
 
 
@@ -436,9 +591,19 @@ def explain(record: dict, policy: Policy, *, generator=None,
     suf = sufficiency(record, policy)
     if not suf.ok:
         return {"status": INSUFFICIENT_DATA, "text": policy.insufficient_text,
-                "generator": None, "reasons": list(suf.reasons)}
+                "generator": None, "reasons": list(suf.reasons),
+                "guideline_context": [], "suggested_actions": []}
     if generator is None:
+        # The assembled blocks COULD survive a generator outage -- they are built
+        # by code and need no model. They are withheld anyway, because
+        # EXPLANATION_UNAVAILABLE_TEXT is a compliance string that bundles
+        # recommendations with the LLM, and changing what a legal string covers
+        # is a product decision rather than a refactor. The architecture makes
+        # splitting them cheap if that decision is ever taken.
         return {"status": GENERATOR_UNAVAILABLE, "text": policy.unavailable_text,
-                "generator": None, "reasons": []}
+                "generator": None, "reasons": [],
+                "guideline_context": [], "suggested_actions": []}
+    context, actions = select_evidence(record, policy)
     return {"status": OK, "text": generator(build_payload(record, policy)),
-            "generator": generator_name, "reasons": []}
+            "generator": generator_name, "reasons": [],
+            "guideline_context": context, "suggested_actions": actions}

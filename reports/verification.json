@@ -201,9 +201,9 @@
   },
   "parity": {
     "rows": 40000,
-    "seconds_vectorised": 0.043778181076049805,
-    "seconds_original": 27.977460384368896,
-    "speedup": 639.0731569173125,
+    "seconds_vectorised": 0.04165077209472656,
+    "seconds_original": 27.62262725830078,
+    "speedup": 663.1960434125567,
     "columns": {
       "spo2_observed": 1.0,
       "fio2_observed": 1.0,
@@ -338,10 +338,29 @@
       "stored findings carry a declared severity": true,
       "the tracked report carries no generated text or identifiers": true
     },
-    "violations": 0,
-    "warnings": 8,
+    "violations": 5,
+    "warnings": 41,
     "template_violations": 0,
-    "ship_criterion_met": true,
+    "ship_criterion_met": false,
+    "failed": []
+  },
+  "evidence": {
+    "corpus_chunks": 189,
+    "keys": 57,
+    "checks": {
+      "the map was built from the corpus now on disk": true,
+      "every mapped passage is byte-identical to its corpus chunk": true,
+      "every passage carries a citation": true,
+      "every action passage is a recommendation": true,
+      "every corpus document names an issuer and a year": true,
+      "no unregistered PDF was ingested": true,
+      "every emitted quote appears verbatim in the corpus": true,
+      "every emitted quote is cited": true,
+      "corpus.json carries no per-patient identifier": true,
+      "evidence_map.md carries no per-patient identifier": true
+    },
+    "passages": 68,
+    "emitted_blocks": 598,
     "failed": []
   }
 }

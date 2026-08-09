@@ -591,6 +591,219 @@ LLM_SAMPLE = 200
 LLM_EXPLANATIONS_JSONL = BUILD / "llm_explanations.jsonl.gz"   # DUA -- build/
 LLM_SCHEMA_VERSION = "1.0.0"
 
+# --------------------------------------------------------------------------
+# THE GUIDELINE CORPUS -- s20
+#
+# Retrieval grounding. The corpus holds published guideline text and NO patient
+# data, which is why its derived artifacts may be read and reviewed freely --
+# the opposite of build/risk_records.jsonl.gz.
+#
+# TWO source directories on purpose. `rag document` is tracked in git and
+# already public on two remotes; anything added now goes to an UNTRACKED
+# directory instead, and the manifest records filename + SHA-256 + source URL
+# so the corpus is reproducible without redistributing anyone's PDF.
+# --------------------------------------------------------------------------
+RAG_DOCS_DIR = REPO_ROOT / "rag document"        # tracked; the space is load-bearing
+RAG_EXTRA_DIR = Path(os.getenv("PM_CORPUS_ROOT", WORKSPACE / "corpus"))
+RAG_EXTRA_DIR.mkdir(parents=True, exist_ok=True)
+
+CORPUS_CHUNKS_JSONL = BUILD / "corpus_chunks.jsonl"
+CORPUS_REPORT_JSON = REPORTS / "corpus.json"
+CORPUS_SCHEMA_VERSION = "1.0.0"
+
+# THE ADMISSION RULE. A document is admitted only if it is registered here with
+# a named issuing body and a year. s20 REFUSES any PDF it finds that is not in
+# this table rather than ingesting it silently -- an unattributable passage is
+# worse than a missing one, because it still gets quoted to a clinician.
+#
+# `role` decides how the document is read, and it is a curation judgement rather
+# than something detectable from the text:
+#   surveillance -- defines vocabulary and thresholds. Contains NO recommendations.
+#   guideline    -- GRADE-rated "We recommend / We suggest" statements.
+#   protocol     -- operational outline steps with concrete parameter targets.
+CORPUS_DOCS: dict[str, dict[str, str]] = {
+    "nhsn_vae_vap.pdf": {
+        "key": "nhsn_vae",
+        "title": "Ventilator-Associated Event (VAE)",
+        "issuer": "CDC / National Healthcare Safety Network",
+        "year": "2026",
+        "role": "surveillance",
+        "cite": "NHSN VAE protocol (Jan 2026)",
+        "url": "https://www.cdc.gov/nhsn/pdfs/pscmanual/10-vae_final.pdf",
+    },
+    "aarc_clinical_guideline.pdf": {
+        "key": "aarc_pva",
+        "title": "AARC Clinical Practice Guideline: Patient-Ventilator Assessment",
+        "issuer": "American Association for Respiratory Care",
+        "year": "2024",
+        "role": "guideline",
+        "cite": "AARC CPG, Respir Care 2024;69(8):1042-1054",
+        "url": "https://rc.rcjournal.com/content/69/8/1042",
+    },
+    "adult_ventilator_protocols.pdf": {
+        "key": "aarc_protocol",
+        "title": "AARC Adult Mechanical Ventilator Protocols",
+        "issuer": "AARC Protocol Committee, Subcommittee Adult Critical Care",
+        "year": "2003",
+        "role": "protocol",
+        "cite": "AARC Adult Mechanical Ventilator Protocols v1.0a (2003)",
+        "url": "https://www.aarc.org/wp-content/uploads/2014/08/vent_protocols.pdf",
+    },
+}
+
+# MEASURED, not assumed. pypdfium2 is the text extractor and pdfplumber supplies
+# per-character font metadata for heading detection; both were probed against
+# all three PDFs before being chosen (2026-08-09):
+#
+#   * pdfplumber tears subscripts onto their own line -- NHSN "8 cmH O" + "2",
+#     AARC "assessment of P" + "plat". pypdfium2 returns "cmH2O" and "Pplat".
+#     Those are clinical parameter names inside the text that gets quoted
+#     verbatim, so this is a correctness difference, not a tidiness one.
+#   * Docling resolves cleanly against the cu128 pins but wants 58 packages
+#     (torchvision, opencv, rapidocr, tree-sitter) and a typer downgrade for a
+#     63-page corpus, and a layout model that reflows text is a liability when
+#     the design rests on byte-identical quoting.
+#
+# Three extraction defects were measured and are corrected in s20:
+#   * U+00BC is a mis-mapped '=' in the AARC subset font ("VT ¼ tidal volume",
+#     "n ¼ 2,822"), 30 occurrences, 29 of them space-flanked, zero in the other
+#     two documents. NFKC would turn it into "1/4", so it is substituted first.
+#   * NHSN formula blocks come back as doubled MATHEMATICAL ITALIC letters
+#     ("SIR = OOOOOOOO (OO)HHHH"). Unrecoverable, so those runs are excised and
+#     counted rather than normalised into plausible-looking garbage.
+#   * U+FFFE is "a hyphen at a line break" and is genuinely ambiguous --
+#     "rec|ommendations" wants a join, "ventilator|associated" wants a hyphen.
+#     Resolved against the corpus's own vocabulary: of 197 breaks, 149 join,
+#     12 hyphenate, 0 are attested both ways, 36 are attested neither way.
+#     Unresolved cases default to JOIN (28 of the 36 are word continuations)
+#     and EVERY one is listed in reports/corpus.json for review.
+CORPUS_HYPHEN_DEFAULT_JOIN = True
+CORPUS_MATH_ITALIC_MAX_RUN = 3   # >N math-italic chars in a row = a dead formula
+
+# Chunking. MedRAG chunks paragraph-wise and splices the heading path onto the
+# snippet as its title -- contextual retrieval without paying an LLM to write
+# the context. Its measured snippet sizes are short: 119 tokens (StatPearls,
+# the closest analogue to a guideline), 182 textbooks, 296 PubMed abstracts.
+CORPUS_CHUNK_MIN_WORDS = 25
+CORPUS_CHUNK_TARGET_WORDS = 220
+CORPUS_CHUNK_MAX_WORDS = 320
+
+# Type priority, applied as a structural filter on chunk kind rather than as a
+# rerank (ClinicBot, arXiv 2605.00846). Order is load-bearing: the most
+# clinically actionable and citable content has to dominate the bundle.
+CORPUS_KIND_PRIORITY = ("recommendation", "table", "prose")
+
+# --------------------------------------------------------------------------
+# THE EVIDENCE MAP -- s21
+#
+# The query space is CLOSED: 11 frozen parameters x 5 derived forms, 4 bands,
+# kind in {physiology, documentation}. Nobody types a question. So the entire
+# retrieval result set is materialised here at build time, reviewed once, and
+# frozen -- and inference is a dict lookup with zero VRAM and zero latency.
+# --------------------------------------------------------------------------
+EVIDENCE_MAP_JSON = MODELS / "evidence_map.json"     # the contract artifact
+EVIDENCE_MAP_MD = REPORTS / "evidence_map.md"        # the human review document
+EVIDENCE_SCHEMA_VERSION = "1.0.0"
+
+EVIDENCE_CONTEXT_K = 1     # definitional passages attached per reading
+EVIDENCE_ACTIONS_K = 2     # graded action statements attached per reading
+
+# Retrieval vocabulary. PARAM_DISPLAY says what a clinician should READ; this
+# says what the guideline literature CALLS the same thing, which is not the same
+# list -- the corpus writes "positive end-expiratory pressure", "FIO2", "V T",
+# "plateau pressure", never "peep" or "fio2".
+#
+# ANCHOR TERMS ARE A HARD GATE, not a ranking hint. A passage is admissible for
+# a parameter only if it actually mentions that parameter. On a closed query set
+# that is strictly better than a similarity threshold: it is decidable, it is
+# reviewable by eye, and it makes "no adequate passage" an honest outcome rather
+# than whatever scored highest among things that were all wrong.
+PARAM_QUERY_TERMS: dict[str, tuple[str, ...]] = {
+    "spo2":                   ("SpO2", "oxygen saturation", "pulse oximetry",
+                               "oximetry", "saturation", "hypoxemia", "normoxemia"),
+    "fio2":                   ("FiO2", "FIO2", "oxygen concentration",
+                               "fraction of inspired oxygen", "inspired oxygen"),
+    # NOT bare "flow" -- it matches "flow-cycled", a mode descriptor rather than
+    # a flow rate. NOT "L/min" either: it is the unit of MINUTE VENTILATION as
+    # well, and it made the AARC minute-ventilation formula ("4.0 x BSA = VE
+    # (L/min)") the top action for flow rate at all four bands. Both were caught
+    # by reading reports/evidence_map.md, not by any score. The consequence is
+    # that flow rate has no coverage in this corpus, which is the true answer.
+    "flow_rate":              ("flow rate", "inspiratory flow", "peak flow"),
+    "peep":                   ("PEEP", "positive end-expiratory pressure",
+                               "end-expiratory pressure", "auto-PEEP", "CPAP"),
+    # NOT "plateau pressure" / "Pplat". They are a DIFFERENT measurement from
+    # peak inspiratory pressure, and listing them here made the AARC plateau-
+    # pressure recommendation the top action for PIP at two bands -- a clinical
+    # conflation, produced by the retrieval vocabulary rather than by the model.
+    # Plateau pressure is not one of the frozen eleven; it is reachable through
+    # tidal volume and lung-protective ventilation, which is where it belongs.
+    "pip":                    ("PIP", "peak inspiratory pressure", "peak pressure",
+                               "peak airway pressure"),
+    "respiratory_rate_total": ("respiratory rate", "breathing frequency",
+                               "breaths/minute", "breaths per minute", "tachypnea"),
+    "minute_volume":          ("minute ventilation", "minute volume", "VE"),
+    "tidal_volume_observed":  ("tidal volume", "VT", "mL/kg", "lung-protective",
+                               "lung protective", "predicted body weight"),
+    "etco2":                  ("EtCO2", "end-tidal", "capnography", "carbon dioxide"),
+    # NOT bare "inspiratory" / "expiratory" -- they match "pressure targeted,
+    # flow-cycled" prose and "end-expiratory pressure", which is PEEP.
+    "inspiratory_ratio":      ("I:E", "I:E ratio", "inspiratory time",
+                               "inspiratory-to-expiratory"),
+    "expiratory_ratio":       ("I:E", "I:E ratio", "expiratory time",
+                               "inspiratory-to-expiratory"),
+}
+
+# What is worth SUGGESTING differs by band, and this is the only place band
+# enters retrieval. Weaning readiness is the right thought at LOW and the wrong
+# one at CRITICAL; escalation is the reverse.
+BAND_QUERY_INTENT: dict[str, tuple[str, ...]] = {
+    "LOW":      ("weaning", "liberation", "spontaneous breathing trial",
+                 "extubation", "readiness", "reduce support"),
+    "MEDIUM":   ("assessment", "assess", "monitoring", "evaluate", "documenting"),
+    "HIGH":     ("lung-protective", "adjust", "escalation", "increase support",
+                 "ventilator adjustments", "assess"),
+    "CRITICAL": ("escalation", "urgent", "deterioration", "physician",
+                 "lung-protective", "assess"),
+}
+
+# The two feature KINDS carried in the payload. `documentation` is the one that
+# needs saying out loud: 18.1% of this model's skill comes from charting
+# behaviour, and a clinician reading a risk board deserves the surveillance
+# definition of what is and is not being charted.
+KIND_QUERY_TERMS: dict[str, tuple[str, ...]] = {
+    "physiology":    ("patient-ventilator assessment", "assessment",
+                      "physiologic", "clinical assessment"),
+    "documentation": ("documentation", "documenting", "recorded", "charting",
+                      "surveillance", "data collection", "reporting"),
+}
+
+# Lexical is the PRIMARY channel: sqlite FTS5 is compiled in, costs nothing,
+# and MedRAG measures the best biomedical dense retriever beating BM25 by 0.01
+# points on MedCorp (70.06 vs 70.05). Dense is a cheap second opinion, not the
+# backbone -- and if it will not load, s21 records that and ships lexical-only.
+RAG_DENSE_ENABLED = os.getenv("PM_RAG_DENSE", "1") == "1"
+RAG_QUERY_ENCODER = "ncbi/MedCPT-Query-Encoder"
+RAG_DOC_ENCODER = "ncbi/MedCPT-Article-Encoder"
+RAG_CROSS_ENCODER = "ncbi/MedCPT-Cross-Encoder"
+RAG_DENSE_DEVICE = "cpu"   # one build-time pass over ~1k chunks; never contends with the 7B
+RAG_RERANK_TOP_N = 12      # candidates handed to the cross-encoder
+
+# The quality flag is a COUNT, not a score, and that is deliberate. Fusing a
+# normalised BM25 with a raw MedCPT cosine mixes incomparable scales: BERT [CLS]
+# cosines sit at 0.7-0.9 almost regardless of relevance, so enabling the dense
+# channel moved every fused score above any fixed threshold and took the
+# "weak match" count from 11 to 0 with no passage having changed. Ranking is
+# therefore done by reciprocal rank fusion, which has no units, and the flag is
+# the one signal a reviewer can independently check: how many times the passage
+# actually names the parameter. Once is usually in passing.
+EVIDENCE_MIN_ANCHOR_HITS = 2
+
+# Review gate. An entry flagged during review and not signed off is emitted with
+# its passage SUPPRESSED, not dropped -- a missing key has to show up in the
+# output rather than disappear from it.
+EVIDENCE_REVIEW_JSON = REPORTS / "evidence_review.json"
+
 # Each cut is solved to an alert budget counted in PROMOTION EVENTS per
 # ventilated patient-day -- a patient held at HIGH for six hours is one alert,
 # not six, and interruptions are what alarm fatigue is about. s13 counts
@@ -713,3 +926,25 @@ FP_EXPLAIN = FP_RECORDS + (EXPLAIN_SCHEMA_VERSION, EXPLAIN_CONTRIBUTOR_K,
 # repo has shipped that defect twice; the prompt is the shape it takes here.
 FP_GENERATE = FP_EXPLAIN + (LLM_MODEL_ID, LLM_REVISION, LLM_QUANT, LLM_SAMPLE,
                             LLM_MAX_NEW_TOKENS, LLM_SEED, LLM_SCHEMA_VERSION)
+
+# The corpus fingerprint deliberately does NOT include the source files -- those
+# are passed to cached_stage as `sources=`, which fingerprints them by size and
+# mtime. What belongs here is the extraction and chunking contract, because a
+# changed hyphen rule or chunk size re-chunks the same PDFs into different text.
+FP_CORPUS = (CORPUS_SCHEMA_VERSION, CORPUS_HYPHEN_DEFAULT_JOIN,
+             CORPUS_MATH_ITALIC_MAX_RUN, CORPUS_CHUNK_MIN_WORDS,
+             CORPUS_CHUNK_TARGET_WORDS, CORPUS_CHUNK_MAX_WORDS,
+             CORPUS_KIND_PRIORITY,
+             tuple(sorted((k, v["role"], v["cite"]) for k, v in CORPUS_DOCS.items())))
+# ⚠️ INCOMPLETE ON PURPOSE, the same way FP_GENERATE is. s21 appends the corpus
+# manifest hash at the call site: the evidence map is a function of the corpus
+# CONTENT, and content is not recoverable from a constant. Without it, editing a
+# PDF would leave s21 logging SKIP and serving a map built from the old text.
+FP_EVIDENCE = FP_CORPUS + (EVIDENCE_SCHEMA_VERSION, EVIDENCE_CONTEXT_K,
+                           EVIDENCE_ACTIONS_K, EVIDENCE_MIN_ANCHOR_HITS,
+                           RAG_DENSE_ENABLED, RAG_QUERY_ENCODER,
+                           RAG_DOC_ENCODER, RAG_CROSS_ENCODER,
+                           RAG_RERANK_TOP_N, tuple(PARAM_DISPLAY), BAND_NAMES,
+                           tuple(sorted(PARAM_QUERY_TERMS.items())),
+                           tuple(sorted(BAND_QUERY_INTENT.items())),
+                           tuple(sorted(KIND_QUERY_TERMS.items())))

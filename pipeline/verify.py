@@ -603,6 +603,109 @@ def verify_llm_explanations() -> dict:
     return out
 
 
+def verify_evidence() -> dict:
+    """Every quoted passage is byte-identical to a chunk of the corpus.
+
+    THE point of this section. The safety argument for suggested_actions is not
+    "the model was well behaved" -- it is "no action can exist that a published
+    guideline does not contain, verbatim". That claim is decidable, so it is
+    decided here, from disk, in a different process from the one that made the
+    files. A hash comparison, not an entailment model's opinion.
+
+    Re-reads the corpus itself rather than the evidence map, so a map that
+    drifted from the chunks it was built from cannot pass by agreeing with
+    itself.
+    """
+    import gzip
+
+    from . import config as C
+
+    if not C.EVIDENCE_MAP_JSON.is_file():
+        log(f"[yellow]no evidence map at {C.EVIDENCE_MAP_JSON.name}; "
+            f"run s20_corpus then s21_evidence[/yellow]")
+        return {"skipped": True, "reason": "s20/s21 have not run"}
+
+    chunks = [json.loads(ln) for ln in
+              C.CORPUS_CHUNKS_JSONL.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    corpus_text = {c["text"] for c in chunks}
+    by_id = {c["chunk_id"]: c for c in chunks}
+    emap = json.loads(C.EVIDENCE_MAP_JSON.read_text(encoding="utf-8"))
+    entries = emap["keys"]
+
+    out: dict = {"corpus_chunks": len(chunks), "keys": len(entries), "checks": {}}
+    fails: list[str] = []
+
+    def check(name, cond, detail=""):
+        out["checks"][name] = bool(cond)
+        log(("  [green]ok[/green]   " if cond else "  [red]FAIL[/red] ") + name
+            + (f"  {detail}" if not cond else ""))
+        if not cond:
+            fails.append(name)
+
+    rep = json.loads(C.CORPUS_REPORT_JSON.read_text(encoding="utf-8"))
+    check("the map was built from the corpus now on disk",
+          emap.get("corpus_manifest_hash") == rep.get("manifest_hash"),
+          f"map {emap.get('corpus_manifest_hash')} vs corpus {rep.get('manifest_hash')}")
+
+    passages = [p for e in entries.values() for p in e["passages"]]
+    out["passages"] = len(passages)
+    bad = [p["chunk_id"] for p in passages
+           if p["chunk_id"] not in by_id or by_id[p["chunk_id"]]["text"] != p["text"]]
+    check("every mapped passage is byte-identical to its corpus chunk",
+          not bad, f"{len(bad)} drifted: {bad[:4]}")
+
+    check("every passage carries a citation",
+          all(p.get("citation") for p in passages))
+    check("every action passage is a recommendation",
+          all(p["kind"] == "recommendation"
+              for k, e in entries.items() if e["channel"] == "actions"
+              for p in e["passages"]),
+          "an action must be a published recommendation or it must not exist")
+
+    # Every document must be attributable, per the corpus admission rule.
+    docs = rep["documents"]
+    check("every corpus document names an issuer and a year",
+          all(d.get("issuer") and d.get("year") for d in docs.values()))
+    check("no unregistered PDF was ingested", not rep.get("refused_unregistered"),
+          str(rep.get("refused_unregistered"))[:120])
+
+    # And the generated side, if it exists.
+    if C.LLM_EXPLANATIONS_JSONL.is_file():
+        rows = []
+        with gzip.open(C.LLM_EXPLANATIONS_JSONL, "rt", encoding="utf-8") as fh:
+            for line in fh:
+                rows.append(json.loads(line))
+        emitted = [e for r in rows
+                   for e in (r.get("guideline_context") or []) + (r.get("suggested_actions") or [])]
+        out["emitted_blocks"] = len(emitted)
+        if emitted:
+            drift = [e["citation"] for e in emitted if e["quote"] not in corpus_text]
+            check("every emitted quote appears verbatim in the corpus",
+                  not drift, f"{len(drift)} not found: {drift[:3]}")
+            check("every emitted quote is cited",
+                  all(e.get("citation") for e in emitted))
+        else:
+            log("  [yellow]no generated row carries an assembled block -- "
+                "s19 ran without retrieval[/yellow]")
+
+    # Same DUA grep as section 8: the corpus is public, but these files sit in
+    # reports/, which is tracked, and a per-patient identifier must never reach
+    # them by any route.
+    for f in (C.CORPUS_REPORT_JSON, C.EVIDENCE_MAP_MD):
+        if f.is_file():
+            blob = f.read_text(encoding="utf-8")
+            check(f"{f.name} carries no per-patient identifier",
+                  not any(k in blob for k in ('"stay_id"', '"subject_id"',
+                                              '"charttime"', '"hadm_id"')))
+
+    out["failed"] = fails
+    if fails:
+        log(f"[red]{len(fails)} evidence checks failed[/red]")
+    else:
+        log("[green]every quotable passage traces to a published document[/green]")
+    return out
+
+
 # ---------------------------------------------------------------------------
 # The ORIGINAL row-by-row implementation, copied faithfully from
 # data/cleaning_and_filling_mising_values_claude.ipynb so parity means something.
@@ -807,6 +910,8 @@ def main() -> None:
         report["explanations"] = verify_explanations()
     with stage("8. Generated text conforms and is grounded"):
         report["llm_explanations"] = verify_llm_explanations()
+    with stage("9. Retrieved evidence traces to a published document"):
+        report["evidence"] = verify_evidence()
 
     out = C.REPORTS / "verification.json"
     out.write_text(json.dumps(report, indent=2, default=float))

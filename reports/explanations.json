@@ -60,6 +60,9 @@
       "soft trend language": 198,
       "lowercase band name": 198,
       "treatment language": 198,
+      "quotation with a drifted number": 124,
+      "quotation with no attribution": 198,
+      "surveillance definition asserted": 198,
       "documentation as physiology": 10
     },
     "caught": {
@@ -72,6 +75,9 @@
       "soft trend language": 198,
       "lowercase band name": 198,
       "treatment language": 198,
+      "quotation with a drifted number": 124,
+      "quotation with no attribution": 198,
+      "surveillance definition asserted": 198,
       "documentation as physiology": 10
     },
     "missed": {},
@@ -81,5 +87,5 @@
     "insufficient": "Insufficient data",
     "generator_unavailable": "LLM explanation and recommendations are not available"
   },
-  "seconds": 31.4
+  "seconds": 47.2
 }

@@ -56,14 +56,29 @@ from .common import cached_stage, log, stage
 REPORT_JSON = C.REPORTS / "explanations.json"
 
 
-def policy() -> E.Policy:
+def evidence_map() -> dict | None:
+    """The frozen map from s21, or None when retrieval has not been built.
+
+    None is a SUPPORTED configuration, not a degraded one: the whole point of
+    this pass is a paired comparison against the no-RAG baseline, and a pipeline
+    that cannot produce the baseline cannot be compared against it.
+    """
+    if not C.EVIDENCE_MAP_JSON.exists():
+        return None
+    return json.loads(C.EVIDENCE_MAP_JSON.read_text(encoding="utf-8")).get("keys")
+
+
+def policy(with_evidence: bool = True) -> E.Policy:
     return E.Policy(
         display=C.PARAM_DISPLAY,
         max_imputed_share=C.SUFFICIENCY_MAX_IMPUTED_SHARE,
         max_doc_share=C.SUFFICIENCY_MAX_DOC_SHARE,
         insufficient_text=C.INSUFFICIENT_DATA_TEXT,
         unavailable_text=C.EXPLANATION_UNAVAILABLE_TEXT,
-        contributor_k=C.EXPLAIN_CONTRIBUTOR_K)
+        contributor_k=C.EXPLAIN_CONTRIBUTOR_K,
+        evidence=evidence_map() if with_evidence else None,
+        context_k=C.EVIDENCE_CONTEXT_K,
+        actions_k=C.EVIDENCE_ACTIONS_K)
 
 
 def records(limit: int | None = None):
@@ -74,26 +89,37 @@ def records(limit: int | None = None):
             yield json.loads(line)
 
 
-def check(record: dict, text: str) -> list[G.Finding]:
+def check(record: dict, text: str, pol: E.Policy | None = None) -> list[G.Finding]:
+    """Evidence is passed AS DATA, and only the passages the model actually saw.
+
+    grounding.py still imports nothing from explain.py -- the exemption it grants
+    is scoped to text it can match against a passage on disk, so handing it the
+    wrong passages would widen nothing and handing it none re-runs the original
+    checks unchanged.
+    """
+    ev = ()
+    if pol is not None and pol.evidence:
+        context, _actions = E.select_evidence(record, pol)
+        ev = tuple({"text": c["quote"], "citation": c["citation"]} for c in context)
     return G.check(record, text, display=C.PARAM_DISPLAY,
-                   band_names=C.BAND_NAMES)
+                   band_names=C.BAND_NAMES, evidence=ev)
 
 
 # --------------------------------------------------------------------------
 # Adversarial mutations. Each returns (mutated_text, code_that_must_fire) or
 # None when the mutation does not apply to this record.
 # --------------------------------------------------------------------------
-def mut_band(rec, text):
+def mut_band(rec, text, pol=None):
     shown = rec["band"]["displayed"]
     other = next(b for b in C.BAND_NAMES if b != shown)
     return f"{text} Overall assessment: {other}.", G.BAND_MISMATCH
 
 
-def mut_trend(rec, text):
+def mut_trend(rec, text, pol=None):
     return f"{text} FiO2 has been climbing through the shift.", G.TREND_CLAIM
 
 
-def mut_imputed(rec, text):
+def mut_imputed(rec, text, pol=None):
     for p, v in rec["telemetry"].items():
         if v.get("source") == "population_reference" and v.get("value") is not None:
             label, unit, dec = C.PARAM_DISPLAY[p]
@@ -116,7 +142,7 @@ def _absent(rec, start: int = 7777) -> int:
     return n
 
 
-def mut_number(rec, text):
+def mut_number(rec, text, pol=None):
     m = G._NUMBER.search(text)
     if not m:
         return None
@@ -124,7 +150,7 @@ def mut_number(rec, text):
             G.FABRICATED_NUMBER)
 
 
-def mut_wrong_value(rec, text):
+def mut_wrong_value(rec, text, pol=None):
     """A right parameter with a wrong number -- the most dangerous single error
     an explanation can make, and the one a bare number-whitelist misses."""
     for p, v in rec["telemetry"].items():
@@ -142,7 +168,7 @@ def _param_not_used(rec):
     return next((p for p in C.PARAM_DISPLAY if p not in used), None)
 
 
-def mut_unsupported(rec, text):
+def mut_unsupported(rec, text, pol=None):
     p = _param_not_used(rec)
     if p is None:
         return None
@@ -150,7 +176,7 @@ def mut_unsupported(rec, text):
             G.UNSUPPORTED_DRIVER)
 
 
-def mut_doc_as_physiology(rec, text):
+def mut_doc_as_physiology(rec, text, pol=None):
     """A documentation feature narrated in a clinical voice -- the
     `spo2_delta_t_min` -> "oxygenation is monitored less often" failure, which is
     the reason `kind` is on every contributor in the first place."""
@@ -166,19 +192,66 @@ def mut_doc_as_physiology(rec, text):
             G.DOC_AS_PHYSIOLOGY)
 
 
-def mut_soft_trend(rec, text):
+def mut_soft_trend(rec, text, pol=None):
     return f"{text} The estimate is higher than earlier.", G.POSSIBLE_TREND_CLAIM
 
 
-def mut_lowercase_band(rec, text):
+def mut_lowercase_band(rec, text, pol=None):
     shown = rec["band"]["displayed"]
     other = next(b for b in C.BAND_NAMES if b != shown)
     return (f"{text} Overall the patient is at {other.lower()} risk.",
             G.POSSIBLE_BAND_MISMATCH)
 
 
-def mut_treatment(rec, text):
+def mut_treatment(rec, text, pol=None):
     return f"{text} Consider titrating support.", G.TREATMENT_LANGUAGE
+
+
+# ---------------------------------------------------- retrieval-era mutations
+def _first_passage(rec, pol):
+    if pol is None or not pol.evidence:
+        return None
+    context, _actions = E.select_evidence(rec, pol)
+    return context[0] if context else None
+
+
+def mut_altered_quote(rec, text, pol=None):
+    """A quotation with one number drifted.
+
+    The failure a quote-only design actually has. Every other check passes on
+    this text: the surrounding words are genuine published prose, the citation
+    is present and correct, and only a comparison against the passage on disk
+    can tell that the threshold moved.
+    """
+    p = _first_passage(rec, pol)
+    if p is None:
+        return None
+    m = G._NUMBER.search(p["quote"])
+    if not m:
+        return None
+    drifted = (p["quote"][:m.start()] + str(_absent(rec, int(float(m.group(1))) + 3))
+               + p["quote"][m.end():])
+    return f"{text} {p['citation']} states: {drifted}", G.ALTERED_QUOTE
+
+
+def mut_uncited_quote(rec, text, pol=None):
+    p = _first_passage(rec, pol)
+    if p is None:
+        return None
+    return f"{text} {p['quote']}", G.UNCITED_QUOTE
+
+
+def mut_definition_conflation(rec, text, pol=None):
+    """The specific false statement this corpus invites.
+
+    NHSN's VAC criteria are about PEEP and FiO2 rises, which are two of this
+    model's top contributors, so retrieval surfaces them constantly -- and a
+    generator that has just been shown the definition is one sentence away from
+    asserting the patient meets it. The thresholds are shared provenance; the
+    statistic is not.
+    """
+    return (f"{text} These values meet the NHSN VAC definition.",
+            G.DEFINITION_CONFLATION)
 
 
 # Every check in grounding.py appears here. A check with no mutation behind it
@@ -193,7 +266,10 @@ MUTATIONS = (("band swapped", mut_band),
              ("documentation as physiology", mut_doc_as_physiology),
              ("soft trend language", mut_soft_trend),
              ("lowercase band name", mut_lowercase_band),
-             ("treatment language", mut_treatment))
+             ("treatment language", mut_treatment),
+             ("quotation with a drifted number", mut_altered_quote),
+             ("quotation with no attribution", mut_uncited_quote),
+             ("surveillance definition asserted", mut_definition_conflation))
 
 # Must NOT fire: the label is a forward risk, so forward-looking language is the
 # band's meaning rather than an unsupported claim about the past.
@@ -215,17 +291,17 @@ def self_check(sample: list[dict], pol: E.Policy) -> dict:
         if not E.sufficiency(rec, pol).ok:
             continue
         text = E.baseline(rec, pol)
-        base_codes = {f.code for f in check(rec, text)}
+        base_codes = {f.code for f in check(rec, text, pol)}
         checked += 1
 
         for name, fn in MUTATIONS:
-            out = fn(rec, text)
+            out = fn(rec, text, pol)
             if out is None:
                 continue
             mutated, want = out
             applied[name] += 1
-            codes = {f.code for f in check(rec, mutated)}
-            new_violations = {f.code for f in check(rec, mutated)
+            codes = {f.code for f in check(rec, mutated, pol)}
+            new_violations = {f.code for f in check(rec, mutated, pol)
                               if f.severity == G.VIOLATION} - base_codes
             if want is None:
                 # mut_wrong_value: either binding check may catch it, but
@@ -237,7 +313,7 @@ def self_check(sample: list[dict], pol: E.Policy) -> dict:
 
         # False-positive direction.
         for phrase in FORWARD_PHRASES:
-            after = {f.code for f in check(rec, f"{text} {phrase}")
+            after = {f.code for f in check(rec, f"{text} {phrase}", pol)
                      if f.severity == G.VIOLATION}
             if after - base_codes:
                 false_pos += 1
@@ -326,7 +402,7 @@ def _run() -> None:
                     blk = E.explain(rec, pol,
                                     generator=lambda _pl, t=text: t,
                                     generator_name="baseline")
-                    findings = check(rec, text)
+                    findings = check(rec, text, pol)
                     lengths.append(len(text))
                 else:
                     blk = E.explain(rec, pol)          # no generator -> refused
@@ -438,7 +514,7 @@ def show(k: int) -> None:
             text = E.baseline(rec, pol)
             print("\n--- baseline ---")
             print(text)
-            f = check(rec, text)
+            f = check(rec, text, pol)
             print(f"\n--- findings: {len(f)} ---")
             for x in f:
                 print(f"  [{x.severity}] {x.code}: {x.message}")
