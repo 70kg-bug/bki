@@ -14,10 +14,10 @@ import time
 
 from . import config as C
 from .common import accounting_table, console, log
-from . import (s01_cohort_strict, s02_table1_static, s03_extract_cache,
-               s04_cohort_final, s05_pivot, s06_split, s07_impute,
-               s08_table3_interventions, s09_table4_outcomes, s10_assemble,
-               s14_forward_targets)
+from .stages import (s01_cohort_strict, s02_table1_static, s03_extract_cache,
+                     s04_cohort_final, s05_pivot, s06_split, s07_impute,
+                     s08_table3_interventions, s09_table4_outcomes,
+                     s10_assemble, s14_forward_targets)
 
 DATA_STAGES = [
     ("cohort (strict)", s01_cohort_strict),
@@ -87,13 +87,14 @@ def main() -> None:
     # against a map that does not match the report sitting beside them. The
     # corpus depends on nothing else in the pipeline, so it can go first.
     if a.with_rag:
-        from . import s20_corpus, s21_evidence
+        from .stages import s20_corpus, s21_evidence
         s20_corpus.main(force=a.force)
         s21_evidence.main(force=a.force)
 
     if a.with_training:
-        from . import (s11_train, s12_baselines, s13_calibrate, s15_target_compare,
-                       s16_bands, s17_records, s18_explain)
+        from .stages import (s11_train, s12_baselines, s13_calibrate,
+                             s15_target_compare, s16_bands, s17_records,
+                             s18_explain)
         import sys
         sys.argv = ["s11", "--phase", "all", "--trials", str(a.trials),
                     "--algos", a.algos]
@@ -115,7 +116,7 @@ def main() -> None:
         s18_explain.main(force=a.force)
 
     if a.with_llm:
-        from . import s19_generate
+        from .stages import s19_generate
         # s19 consumes the same records s18 does and is checked by the same
         # grounding module, so it can run without --with-training as long as
         # s17's records are current.

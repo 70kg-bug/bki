@@ -283,6 +283,6 @@ quietly used anyway.
 
 ---
 
-*Sources: `models/risk_bands_y_resp_6h.json`, `bki/reports/bands.json`, `bki/pipeline/bands.py`,
-`bki/pipeline/s16_bands.py`. Every figure is read from the build artifacts. Aggregate statistics
+*Sources: `models/risk_bands_y_resp_6h.json`, `bki/reports/s16_bands.json`, `bki/pipeline/core/bands.py`,
+`bki/pipeline/stages/s16_bands.py`. Every figure is read from the build artifacts. Aggregate statistics
 only.*

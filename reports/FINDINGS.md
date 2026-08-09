@@ -1,8 +1,8 @@
 # Pulsemind — MIMIC-IV pipeline rebuild: findings
 
 **Date:** 2026-08-04 · **Source data:** MIMIC-IV 3.1 (97.2 GB, local) · **Code:** `pipeline/`
-**Raw results:** `reports/final_evaluation.json`, `reports/bakeoff_results.json`,
-`reports/calibration.json`, `reports/verification.json`
+**Raw results:** `reports/s12_final_evaluation.json`, `reports/s11_bakeoff.json`,
+`reports/s13_calibration.json`, `reports/verify.json`
 
 ---
 
@@ -26,9 +26,9 @@
 > that argument was accepted and acted on.
 >
 > **Current numbers live in:**
-> `reports/gate_pivot.json` (the eight-step ablation that drove the switch),
-> `reports/target_comparison.json` (head-to-head on one common row set),
-> `reports/calibration.json` and `models/operating_point_y_resp_6h.json` (rewritten for the
+> `reports/tool_gate_pivot.json` (the eight-step ablation that drove the switch),
+> `reports/s15_target_comparison.json` (head-to-head on one common row set),
+> `reports/s13_calibration.json` and `models/operating_point_y_resp_6h.json` (rewritten for the
 > new label), and `.claude/rules/results.md` (the interpretation).
 >
 > Headline replacement figures, for orientation — physiology-attributable skill,
@@ -159,7 +159,7 @@ directly answers the concern that motivated the scale-up.
 
 The bottleneck was isolated by changing **one thing at a time**, every variant trained on
 the same patients and scored on the same held-out patients.
-Reproduce: `python -m pipeline.ablate_method` → `reports/method_ablation.json`.
+Reproduce: `python -m pipeline.tools.ablate_method` → `reports/tool_method_ablation.json`.
 
 | Variant | Rows | AP | Δ vs current |
 |---|---|---|---|
@@ -302,7 +302,7 @@ Under ROC-AUC the label looks *worse*, not better. Switching metrics does not re
 
 ## 5. Finding: the scores rank well and are not probabilities
 
-`pipeline/s13_calibrate.py` → `reports/calibration.json`. Same held-out 6,609 patients.
+`pipeline/stages/s13_calibrate.py` → `reports/s13_calibration.json`. Same held-out 6,609 patients.
 
 Everything in §2 measures **rank** — AP and ROC-AUC ask whether sicker patients sort above
 healthier ones, and both are invariant under *any* monotone rescaling of the output. The
@@ -522,8 +522,8 @@ The vectorised rewrite against the original row-by-row implementation on an iden
 
 `warning` was chosen because it was convenient and sounded plausible. §4 shows what it
 actually is. These are the realistic alternatives, all measured on the built cohort
-(39,319 admissions / 4,200,041 rows). Full numbers: `reports/target_candidates.json`,
-reproducible via `python -m pipeline.explore_targets`.
+(39,319 admissions / 4,200,041 rows). Full numbers: `reports/tool_target_candidates.json`,
+reproducible via `python -m pipeline.tools.explore_targets`.
 
 Time-varying targets are evaluated on a **6-hour forward look-ahead** over 3,548,733
 hourly bins — "will this happen in the next 6 h?"
@@ -542,8 +542,8 @@ hourly bins — "will this happen in the next 6 h?"
 
 ### D versus `warning` — measured head-to-head
 
-`pipeline/s14_forward_targets.py` + `pipeline/s15_target_compare.py` →
-`reports/target_comparison.json`. D was previously a recommendation from construct
+`pipeline/stages/s14_forward_targets.py` + `pipeline/stages/s15_target_compare.py` →
+`reports/s15_target_comparison.json`. D was previously a recommendation from construct
 validity. It has now been trained and measured.
 
 **Definition.** D is positive if, within the next 6 hours, **any** of: FiO₂ rises ≥20
@@ -622,7 +622,7 @@ charted on only 22.4% of rows against 85.5% for the LOCF value. Its FiO₂ and P
 components therefore could not fire on roughly four bins in five. **The 7.98% was an
 undercount driven by charting sparsity.** Using the setting actually in force is both
 clinically faithful and ~4× more eligible. Full reconciliation in
-`reports/forward_targets.json`.
+`reports/s14_forward_targets.json`.
 
 ### Recommendation and honest caveats
 
@@ -774,11 +774,11 @@ Total build artifacts: **400 MB**. DuckDB never spilled to disk.
 ```
 python -m pipeline.run_all                  # build data; skips what is current
 python -m pipeline.run_all --force          # rebuild from the 42 GB source
-python -m pipeline.check_env                # verify GPU + library versions
-python -m pipeline.verify                   # faithfulness, parity, leakage checks
-python -m pipeline.s11_train --phase a      # feature-set ablation
-python -m pipeline.s11_train --phase b --time-budget 600
-python -m pipeline.s12_baselines            # held-out evaluation + baselines
+python -m pipeline.tools.check_env                # verify GPU + library versions
+python -m pipeline.tools.verify                   # faithfulness, parity, leakage checks
+python -m pipeline.stages.s11_train --phase a      # feature-set ablation
+python -m pipeline.stages.s11_train --phase b --time-budget 600
+python -m pipeline.stages.s12_baselines            # held-out evaluation + baselines
 ```
 
 Environment: `uv venv` on Python 3.12, pinned in `pipeline/requirements.lock.txt`.

@@ -124,6 +124,39 @@ for _d in (BUILD, MANIFEST_DIR, REPORTS, MODELS, SCRATCH):
     _d.mkdir(parents=True, exist_ok=True)
 
 # --------------------------------------------------------------------------
+# Report paths -- ONE definition each, named for the module that writes them.
+#
+# These used to be rebuilt as string literals wherever they were needed, and the
+# same path appeared in up to three modules: "bakeoff_results.json" lived in
+# s11_train, s12_baselines AND s13_calibrate. That is not merely untidy. s13's
+# tuned_params() falls back to XGB_FALLBACK when the file is missing, SILENTLY --
+# so a rename that updated the writer and missed one reader would train the next
+# model on default hyperparameters and log nothing. Same shape as the FP_*
+# defect that has shipped here twice: defining it is not wiring it up.
+#
+# The prefix is the producer, so `ls reports/` reads in pipeline order and an
+# unfamiliar file's origin is never a guess.
+# --------------------------------------------------------------------------
+RPT_S11_BAKEOFF = REPORTS / "s11_bakeoff.json"
+RPT_S12_EVALUATION = REPORTS / "s12_final_evaluation.json"
+RPT_S13_CALIBRATION = REPORTS / "s13_calibration.json"
+RPT_S14_FORWARD = REPORTS / "s14_forward_targets.json"
+RPT_S15_COMPARISON = REPORTS / "s15_target_comparison.json"
+RPT_S16_BANDS = REPORTS / "s16_bands.json"
+RPT_S17_RECORDS = REPORTS / "s17_records.json"
+RPT_S18_EXPLANATIONS = REPORTS / "s18_explanations.json"
+RPT_S19_LLM = REPORTS / "s19_llm_explanations.json"
+RPT_S20_CORPUS = REPORTS / "s20_corpus.json"
+RPT_S21_EVIDENCE_MD = REPORTS / "s21_evidence_map.md"
+
+# tools/ -- these answer a question and change nothing, so they are prefixed
+# `tool_` rather than by a stage number they do not have.
+RPT_VERIFY = REPORTS / "verify.json"
+RPT_TOOL_ABLATION = REPORTS / "tool_method_ablation.json"
+RPT_TOOL_GATE_PIVOT = REPORTS / "tool_gate_pivot.json"
+RPT_TOOL_TARGETS = REPORTS / "tool_target_candidates.json"
+
+# --------------------------------------------------------------------------
 # Keep every temporary file on D:. The C: drive is tight (~13 GB), and a
 # spilling DuckDB query or a CatBoost training directory can be many GB.
 # This must run before duckdb/matplotlib/numba/catboost are first used.
@@ -175,14 +208,6 @@ DUCKDB_MAX_TEMP = os.getenv("PM_DUCKDB_MAX_TEMP", "12GB")
 # --------------------------------------------------------------------------
 ITEM_INVASIVE_VENT = 225792
 ITEM_NONINVASIVE_VENT = 225794
-# Items used by the "wider" cohort definition (detection only -- still ventilated patients)
-COHORT_HINT_ITEMS = {
-    220339: "PEEP set",
-    223849: "Ventilator Mode",
-    224695: "Peak Insp. Pressure",
-    224685: "Tidal Volume (observed)",
-}
-VENT_WINDOW_GRACE_MIN = 0  # rows strictly inside [vent_start, vent_end]
 
 # --------------------------------------------------------------------------
 # THE FROZEN ELEVEN -- the model's only time-series inputs. Immutable.
@@ -263,9 +288,6 @@ ITEMID_TO_NAME: dict[int, str] = {v: k for k, v in CACHE_ITEMS.items()}
 # Read by s02 out of the cache, in preference order within each metric.
 BODY_WEIGHT_ITEMIDS = {226512: 1.0, 224639: 1.0, 226531: 0.45359237}  # -> kg
 BODY_HEIGHT_ITEMIDS = {226730: 1.0, 226707: 2.54}                     # -> cm
-
-# Items whose payload is text rather than a number (valuenum is null for these).
-TEXT_ITEMIDS = {223849, 223848, 226732}
 
 # --------------------------------------------------------------------------
 # Physiologic plausibility ranges. Out-of-range -> NULL, so bad values flow into
@@ -608,7 +630,7 @@ RAG_EXTRA_DIR = Path(os.getenv("PM_CORPUS_ROOT", WORKSPACE / "corpus"))
 RAG_EXTRA_DIR.mkdir(parents=True, exist_ok=True)
 
 CORPUS_CHUNKS_JSONL = BUILD / "corpus_chunks.jsonl"
-CORPUS_REPORT_JSON = REPORTS / "corpus.json"
+CORPUS_REPORT_JSON = RPT_S20_CORPUS
 CORPUS_SCHEMA_VERSION = "1.0.0"
 
 # THE ADMISSION RULE. A document is admitted only if it is registered here with
@@ -702,7 +724,7 @@ CORPUS_KIND_PRIORITY = ("recommendation", "table", "prose")
 # frozen -- and inference is a dict lookup with zero VRAM and zero latency.
 # --------------------------------------------------------------------------
 EVIDENCE_MAP_JSON = MODELS / "evidence_map.json"     # the contract artifact
-EVIDENCE_MAP_MD = REPORTS / "evidence_map.md"        # the human review document
+EVIDENCE_MAP_MD = RPT_S21_EVIDENCE_MD                # the human review document
 EVIDENCE_SCHEMA_VERSION = "1.0.0"
 
 EVIDENCE_CONTEXT_K = 1     # definitional passages attached per reading
@@ -802,7 +824,6 @@ EVIDENCE_MIN_ANCHOR_HITS = 2
 # Review gate. An entry flagged during review and not signed off is emitted with
 # its passage SUPPRESSED, not dropped -- a missing key has to show up in the
 # output rather than disappear from it.
-EVIDENCE_REVIEW_JSON = REPORTS / "evidence_review.json"
 
 # Each cut is solved to an alert budget counted in PROMOTION EVENTS per
 # ventilated patient-day -- a patient held at HIGH for six hours is one alert,
