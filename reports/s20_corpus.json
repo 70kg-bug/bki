@@ -1,0 +1,391 @@
+{
+  "schema_version": "1.0.0",
+  "manifest_hash": "62b9e550fc137800",
+  "documents": {
+    "aarc_clinical_guideline.pdf": {
+      "key": "aarc_pva",
+      "title": "AARC Clinical Practice Guideline: Patient-Ventilator Assessment",
+      "issuer": "American Association for Respiratory Care",
+      "year": "2024",
+      "role": "guideline",
+      "cite": "AARC CPG, Respir Care 2024;69(8):1042-1054",
+      "url": "https://rc.rcjournal.com/content/69/8/1042",
+      "tracked_in_git": true,
+      "sha256": "8f8f4167c1945e3525c6d85e42659f3ede0c0c5cdba7e7dfc67cf8e9060ecdb7",
+      "bytes": 209638,
+      "pages": 13,
+      "chunks": 60,
+      "chunks_by_kind": {
+        "prose": 38,
+        "recommendation": 22
+      },
+      "graded_statements": 22,
+      "words_total": 9593,
+      "words_median": 107.5,
+      "extraction": {
+        "boilerplate_lines_dropped": 63,
+        "boilerplate_patterns": 5,
+        "body_glyph_height": 6.9,
+        "body_font_size": 10.0,
+        "body_font": "AdvP6975",
+        "typography_line_match_rate": 0.6421,
+        "headings_detected": 33,
+        "hyphen_joined_attested": 149,
+        "hyphen_default_join": 29,
+        "bad_equals_fixed": 30,
+        "hyphen_hyphen_attested": 5,
+        "hyphen_both_halves_are_words": 2
+      }
+    },
+    "adult_ventilator_protocols.pdf": {
+      "key": "aarc_protocol",
+      "title": "AARC Adult Mechanical Ventilator Protocols",
+      "issuer": "AARC Protocol Committee, Subcommittee Adult Critical Care",
+      "year": "2003",
+      "role": "protocol",
+      "cite": "AARC Adult Mechanical Ventilator Protocols v1.0a (2003)",
+      "url": "https://www.aarc.org/wp-content/uploads/2014/08/vent_protocols.pdf",
+      "tracked_in_git": true,
+      "sha256": "1d162e41d39d60f131e8d090807b54569d9c42eead34d6ccc55b90d8d23b983a",
+      "bytes": 138277,
+      "pages": 6,
+      "chunks": 28,
+      "chunks_by_kind": {
+        "recommendation": 23,
+        "prose": 5
+      },
+      "graded_statements": 0,
+      "words_total": 1299,
+      "words_median": 37.5,
+      "extraction": {
+        "body_glyph_height": 8.5,
+        "body_font_size": 12.0,
+        "body_font": "TimesNewRoman",
+        "typography_line_match_rate": 0.8402,
+        "headings_detected": 8,
+        "hyphen_both_halves_are_words": 1
+      }
+    },
+    "nhsn_vae_vap.pdf": {
+      "key": "nhsn_vae",
+      "title": "Ventilator-Associated Event (VAE)",
+      "issuer": "CDC / National Healthcare Safety Network",
+      "year": "2026",
+      "role": "surveillance",
+      "cite": "NHSN VAE protocol (Jan 2026)",
+      "url": "https://www.cdc.gov/nhsn/pdfs/pscmanual/10-vae_final.pdf",
+      "tracked_in_git": true,
+      "sha256": "6f4b1cf15907e64c2f9bd737a2f6622ff437d84b6a33b9d9cccd045b06d4a822",
+      "bytes": 1653225,
+      "pages": 44,
+      "chunks": 101,
+      "chunks_by_kind": {
+        "prose": 94,
+        "table": 7
+      },
+      "graded_statements": 0,
+      "words_total": 18036,
+      "words_median": 166.0,
+      "extraction": {
+        "boilerplate_lines_dropped": 181,
+        "boilerplate_patterns": 2,
+        "body_glyph_height": 7.6,
+        "body_font_size": 11.0,
+        "body_font": "Calibri",
+        "typography_line_match_rate": 0.7477,
+        "headings_detected": 65,
+        "hyphen_hyphen_attested": 7,
+        "formula_chars_excised": 662,
+        "formula_runs_excised": 73,
+        "math_italic_folded": 20,
+        "hyphen_both_halves_are_words": 4
+      }
+    }
+  },
+  "refused_unregistered": [],
+  "totals": {
+    "documents": 3,
+    "pages": 63,
+    "chunks": 189,
+    "words": 28928,
+    "by_kind": {
+      "prose": 137,
+      "recommendation": 45,
+      "table": 7
+    },
+    "graded_statements": 22
+  },
+  "extraction_repairs": {
+    "bad_equals_fixed": 30,
+    "boilerplate_lines_dropped": 244,
+    "boilerplate_patterns": 7,
+    "formula_chars_excised": 662,
+    "formula_runs_excised": 73,
+    "headings_detected": 106,
+    "hyphen_both_halves_are_words": 7,
+    "hyphen_default_join": 29,
+    "hyphen_hyphen_attested": 12,
+    "hyphen_joined_attested": 149,
+    "math_italic_folded": 20
+  },
+  "hyphen_fallbacks": [
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "var",
+      "right": "iations",
+      "rule": "default_join",
+      "result": "variations"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "man",
+      "right": "ageable",
+      "rule": "default_join",
+      "result": "manageable"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "screen",
+      "right": "ing",
+      "rule": "default_join",
+      "result": "screening"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "accept",
+      "right": "ability",
+      "rule": "default_join",
+      "result": "acceptability"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "communica",
+      "right": "tions",
+      "rule": "default_join",
+      "result": "communications"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "pharma",
+      "right": "cists",
+      "rule": "default_join",
+      "result": "pharmacists"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "expand",
+      "right": "ing",
+      "rule": "default_join",
+      "result": "expanding"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "follow",
+      "right": "up",
+      "rule": "default_join",
+      "result": "followup"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "con",
+      "right": "nected",
+      "rule": "default_join",
+      "result": "connected"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "ran",
+      "right": "domly",
+      "rule": "default_join",
+      "result": "randomly"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "single",
+      "right": "blinded",
+      "rule": "default_join",
+      "result": "singleblinded"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "con",
+      "right": "nected",
+      "rule": "default_join",
+      "result": "connected"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "adher",
+      "right": "ent",
+      "rule": "default_join",
+      "result": "adherent"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "adher",
+      "right": "ent",
+      "rule": "default_join",
+      "result": "adherent"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "ad",
+      "right": "herent",
+      "rule": "default_join",
+      "result": "adherent"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "cor",
+      "right": "relation",
+      "rule": "default_join",
+      "result": "correlation"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "and",
+      "right": "Table",
+      "rule": "both_halves_are_words",
+      "result": "and-Table"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "rec",
+      "right": "ognized",
+      "rule": "default_join",
+      "result": "recognized"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "pre",
+      "right": "dict",
+      "rule": "default_join",
+      "result": "predict"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "con",
+      "right": "spicuous",
+      "rule": "default_join",
+      "result": "conspicuous"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "atten",
+      "right": "tiveness",
+      "rule": "default_join",
+      "result": "attentiveness"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "value",
+      "right": "based",
+      "rule": "both_halves_are_words",
+      "result": "value-based"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "infla",
+      "right": "tion",
+      "rule": "default_join",
+      "result": "inflation"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "microbiologi",
+      "right": "cally",
+      "rule": "default_join",
+      "result": "microbiologically"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "rou",
+      "right": "tine",
+      "rule": "default_join",
+      "result": "routine"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "readi",
+      "right": "ness",
+      "rule": "default_join",
+      "result": "readiness"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "pre",
+      "right": "vents",
+      "rule": "default_join",
+      "result": "prevents"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "expira",
+      "right": "tory",
+      "rule": "default_join",
+      "result": "expiratory"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "opera",
+      "right": "tions",
+      "rule": "default_join",
+      "result": "operations"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "Alkmim",
+      "right": "Teixeira",
+      "rule": "default_join",
+      "result": "AlkmimTeixeira"
+    },
+    {
+      "doc": "aarc_clinical_guideline.pdf",
+      "left": "main",
+      "right": "tenance",
+      "rule": "default_join",
+      "result": "maintenance"
+    },
+    {
+      "doc": "adult_ventilator_protocols.pdf",
+      "left": "pressure",
+      "right": "ventilation",
+      "rule": "both_halves_are_words",
+      "result": "pressure-ventilation"
+    },
+    {
+      "doc": "nhsn_vae_vap.pdf",
+      "left": "for",
+      "right": "reporting",
+      "rule": "both_halves_are_words",
+      "result": "for-reporting"
+    },
+    {
+      "doc": "nhsn_vae_vap.pdf",
+      "left": "PS",
+      "right": "Analysis",
+      "rule": "both_halves_are_words",
+      "result": "PS-Analysis"
+    },
+    {
+      "doc": "nhsn_vae_vap.pdf",
+      "left": "ps",
+      "right": "analysis",
+      "rule": "both_halves_are_words",
+      "result": "ps-analysis"
+    },
+    {
+      "doc": "nhsn_vae_vap.pdf",
+      "left": "ps",
+      "right": "analysis",
+      "rule": "both_halves_are_words",
+      "result": "ps-analysis"
+    }
+  ],
+  "chunk_words": {
+    "min": 12,
+    "median": 118.0,
+    "max": 341
+  },
+  "seconds": 5.6
+}

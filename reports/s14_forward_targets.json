@@ -1,0 +1,213 @@
+{
+  "rows": 4200041,
+  "admissions": 39319,
+  "definition": {
+    "fio2_rise": 20.0,
+    "peep_rise": 3.0,
+    "spo2_below": 88.0,
+    "baseline": "LOCF value in force",
+    "forward_values": "measured only"
+  },
+  "horizons": {
+    "2h": {
+      "rows_labelled": 4099496,
+      "rows_dropped_unobservable": 100545,
+      "pct_dropped": 2.393905202353977,
+      "positive": 211097,
+      "positive_rate": 0.05149340309150198,
+      "admissions_any": 24649,
+      "admissions_any_pct": 62.6897937383962
+    },
+    "6h": {
+      "rows_labelled": 3937969,
+      "rows_dropped_unobservable": 262072,
+      "pct_dropped": 6.239748611977835,
+      "positive": 434011,
+      "positive_rate": 0.11021188841252941,
+      "admissions_any": 24828,
+      "admissions_any_pct": 63.145044380579364
+    },
+    "12h": {
+      "rows_labelled": 3756002,
+      "rows_dropped_unobservable": 444039,
+      "pct_dropped": 10.572253937521086,
+      "positive": 666569,
+      "positive_rate": 0.1774676903792916,
+      "admissions_any": 24896,
+      "admissions_any_pct": 63.31798875861543
+    }
+  },
+  "variants": {
+    "resp": {
+      "2h": {
+        "rows_labelled": 4098786,
+        "rows_dropped_unobservable": 101255,
+        "pct_dropped": 2.4108097992376742,
+        "positive": 157892,
+        "positive_rate": 0.038521650069069234,
+        "admissions_any": 19007,
+        "admissions_any_pct": 48.34049696075689
+      },
+      "6h": {
+        "rows_labelled": 3931646,
+        "rows_dropped_unobservable": 268395,
+        "pct_dropped": 6.390294761408281,
+        "positive": 330414,
+        "positive_rate": 0.08403961089070583,
+        "admissions_any": 19259,
+        "admissions_any_pct": 48.98140847936112
+      },
+      "12h": {
+        "rows_labelled": 3743017,
+        "rows_dropped_unobservable": 457024,
+        "pct_dropped": 10.881417586161659,
+        "positive": 517018,
+        "positive_rate": 0.13812868068726378,
+        "admissions_any": 19361,
+        "admissions_any_pct": 49.24082504641522
+      }
+    },
+    "circ": {
+      "2h": {
+        "rows_labelled": 4093862,
+        "rows_dropped_unobservable": 106179,
+        "pct_dropped": 2.528046750019821,
+        "positive": 58535,
+        "positive_rate": 0.014298234771958605,
+        "admissions_any": 14106,
+        "admissions_any_pct": 35.875785243775276
+      },
+      "6h": {
+        "rows_labelled": 3915515,
+        "rows_dropped_unobservable": 284526,
+        "pct_dropped": 6.774362440747602,
+        "positive": 121433,
+        "positive_rate": 0.031013289439575636,
+        "admissions_any": 14220,
+        "admissions_any_pct": 36.16572140695338
+      },
+      "12h": {
+        "rows_labelled": 3708339,
+        "rows_dropped_unobservable": 491702,
+        "pct_dropped": 11.70707619282764,
+        "positive": 187762,
+        "positive_rate": 0.0506323720673865,
+        "admissions_any": 14226,
+        "admissions_any_pct": 36.180981205015385
+      }
+    },
+    "composite": {
+      "2h": {
+        "rows_labelled": 4099496,
+        "rows_dropped_unobservable": 100545,
+        "pct_dropped": 2.393905202353977,
+        "positive": 211097,
+        "positive_rate": 0.05149340309150198,
+        "admissions_any": 24649,
+        "admissions_any_pct": 62.6897937383962
+      },
+      "6h": {
+        "rows_labelled": 3937969,
+        "rows_dropped_unobservable": 262072,
+        "pct_dropped": 6.239748611977835,
+        "positive": 434011,
+        "positive_rate": 0.11021188841252941,
+        "admissions_any": 24828,
+        "admissions_any_pct": 63.145044380579364
+      },
+      "12h": {
+        "rows_labelled": 3756002,
+        "rows_dropped_unobservable": 444039,
+        "pct_dropped": 10.572253937521086,
+        "positive": 666569,
+        "positive_rate": 0.1774676903792916,
+        "admissions_any": 24896,
+        "admissions_any_pct": 63.31798875861543
+      }
+    },
+    "strict": {
+      "2h": {
+        "rows_labelled": 4099265,
+        "rows_dropped_unobservable": 100776,
+        "pct_dropped": 2.399405148664025,
+        "positive": 171949,
+        "positive_rate": 0.041946300129413444,
+        "admissions_any": 23821,
+        "admissions_any_pct": 60.583941605839414
+      },
+      "6h": {
+        "rows_labelled": 3936011,
+        "rows_dropped_unobservable": 264030,
+        "pct_dropped": 6.286367204510623,
+        "positive": 358553,
+        "positive_rate": 0.09109552793424612,
+        "admissions_any": 24778,
+        "admissions_any_pct": 63.01787939672931
+      },
+      "12h": {
+        "rows_labelled": 3750963,
+        "rows_dropped_unobservable": 449078,
+        "pct_dropped": 10.692228956812565,
+        "positive": 552966,
+        "positive_rate": 0.14741974261009771,
+        "admissions_any": 24883,
+        "admissions_any_pct": 63.28492586281442
+      }
+    }
+  },
+  "components_6h": {
+    "d_spo2": {
+      "fires": 141312,
+      "share_of_positives": 0.3255954342171051,
+      "sole_trigger": 112904,
+      "marginal_share": 0.26014087200554825
+    },
+    "d_fio2": {
+      "fires": 62746,
+      "share_of_positives": 0.14457237258963482,
+      "sole_trigger": 39189,
+      "marginal_share": 0.09029494644144964
+    },
+    "d_peep": {
+      "fires": 161620,
+      "share_of_positives": 0.3723868749870395,
+      "sole_trigger": 131566,
+      "marginal_share": 0.3031397821714196
+    },
+    "d_vaso": {
+      "fires": 121433,
+      "share_of_positives": 0.2797924476568566,
+      "sole_trigger": 103597,
+      "marginal_share": 0.23869671506021736
+    }
+  },
+  "patient_state_only_rate": 0.03588448766356465,
+  "reconciliation": {
+    "published_hourly_estimate": 0.0798,
+    "row_grain_composite": 0.11021188841252941,
+    "row_grain_strict": 0.09109552793424612,
+    "baseline_eligibility_pct": {
+      "fio2_measured": 22.42,
+      "fio2_locf": 85.47,
+      "peep_measured": 20.11,
+      "peep_locf": 78.86
+    },
+    "explanation": "explore_targets required a same-hour measured baseline, so the FiO2/PEEP components could not fire on ~78% of bins. The published 7.98% was an undercount caused by charting sparsity, not a different definition."
+  },
+  "trained_label": {
+    "column": "y_resp_6h",
+    "horizon_h": 6,
+    "tightenings": {
+      "fio2_persist_to_next_reading": true,
+      "vaso_first_or_off_period": true,
+      "vaso_off_period_min": 360.0
+    },
+    "rows_labelled": 3931646,
+    "rows_dropped_unobservable": 268395,
+    "pct_dropped": 6.390294761408281,
+    "positive": 330414,
+    "positive_rate": 0.08403961089070583,
+    "admissions_any": 19259,
+    "admissions_any_pct": 48.98140847936112
+  }
+}

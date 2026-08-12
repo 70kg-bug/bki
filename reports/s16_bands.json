@@ -1,0 +1,1408 @@
+{
+  "reproduction": {
+    "average_precision": 0.41100145870017196,
+    "roc_auc": 0.7824086191544388,
+    "brier": 0.061462969353962935
+  },
+  "grid": {
+    "median_min": 60.0,
+    "p25_min": 59.0,
+    "p75_min": 60.0,
+    "intervals": 630288
+  },
+  "sweep": [
+    {
+      "config": {
+        "promote_dwell_min": 0.0,
+        "promote_min_readings": 1,
+        "demote_margin_frac": 0.0,
+        "demote_dwell_min": 0.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.23522935677036205,
+        0.3384537827189876,
+        0.6087815820350823
+      ],
+      "solved": [
+        {
+          "cut": 0.23522935677036205,
+          "promotions_per_day": 0.6859055212935203,
+          "budget": 0.7,
+          "rate_just_below": 0.7068979723776866,
+          "cut_just_below": 0.22951733637859043
+        },
+        {
+          "cut": 0.3384537827189876,
+          "promotions_per_day": 0.4311058432791831,
+          "budget": 0.45,
+          "rate_just_below": 0.46244240069467774,
+          "cut_just_below": 0.3240148862721327
+        },
+        {
+          "cut": 0.6087815820350823,
+          "promotions_per_day": 0.18619391396390972,
+          "budget": 0.2,
+          "rate_just_below": 0.21433596795355292,
+          "cut_just_below": 0.5430327614764789
+        }
+      ],
+      "sensitivity_high": 0.2696207061068702,
+      "flips_per_day": 1.5799101228996457,
+      "lost_lead_median_min": 0.0,
+      "lost_lead_p90_min": 0.0,
+      "lost_lead_median_min_positive": 0.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 173957,
+          "share": 0.9355746063161517,
+          "observed_rate": 0.061992331438228986
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 4997,
+          "share": 0.02687483865416057,
+          "observed_rate": 0.29277566539923955
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 3801,
+          "share": 0.02044251785560623,
+          "observed_rate": 0.47540121020784004
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 3181,
+          "share": 0.017108037174081405,
+          "observed_rate": 0.8531908204966991
+        }
+      ],
+      "seconds": 1.3
+    },
+    {
+      "config": {
+        "promote_dwell_min": 0.0,
+        "promote_min_readings": 1,
+        "demote_margin_frac": 0.0,
+        "demote_dwell_min": 60.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.18500213679014268,
+        0.3004611744609069,
+        0.5430327614764789
+      ],
+      "solved": [
+        {
+          "cut": 0.18500213679014268,
+          "promotions_per_day": 0.6999004886829645,
+          "budget": 0.7,
+          "rate_just_below": 0.7110051910680669,
+          "cut_just_below": 0.1815188062428386
+        },
+        {
+          "cut": 0.3004611744609069,
+          "promotions_per_day": 0.43247491617597655,
+          "budget": 0.45,
+          "rate_just_below": 0.4527067712063687,
+          "cut_just_below": 0.29003340670748506
+        },
+        {
+          "cut": 0.5430327614764789,
+          "promotions_per_day": 0.19790709319203148,
+          "budget": 0.2,
+          "rate_just_below": 0.22635338560318435,
+          "cut_just_below": 0.4908254468308987
+        }
+      ],
+      "sensitivity_high": 0.36521946564885494,
+      "flips_per_day": 1.6567303243308338,
+      "lost_lead_median_min": 0.0,
+      "lost_lead_p90_min": 0.0,
+      "lost_lead_median_min_positive": 0.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 161231,
+          "share": 0.867131701230531,
+          "observed_rate": 0.053085324782454986
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 11535,
+          "share": 0.06203747526030462,
+          "observed_rate": 0.18075422626788037
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 7681,
+          "share": 0.04130991308837449,
+          "observed_rate": 0.35112615544850934
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 5489,
+          "share": 0.02952091042078995,
+          "observed_rate": 0.624339588267444
+        }
+      ],
+      "seconds": 1.5
+    },
+    {
+      "config": {
+        "promote_dwell_min": 0.0,
+        "promote_min_readings": 1,
+        "demote_margin_frac": 0.0,
+        "demote_dwell_min": 120.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.1640455208772237,
+        0.2712914738558427,
+        0.5430327614764789
+      ],
+      "solved": [
+        {
+          "cut": 0.1640455208772237,
+          "promotions_per_day": 0.6912296936699394,
+          "budget": 0.7,
+          "rate_just_below": 0.7015738000012677,
+          "cut_just_below": 0.1615111633320881
+        },
+        {
+          "cut": 0.2712914738558427,
+          "promotions_per_day": 0.44342749935032416,
+          "budget": 0.45,
+          "rate_just_below": 0.4546843209461815,
+          "cut_just_below": 0.2633290733775253
+        },
+        {
+          "cut": 0.5430327614764789,
+          "promotions_per_day": 0.19182232476183836,
+          "budget": 0.2,
+          "rate_just_below": 0.21920378269770743,
+          "cut_just_below": 0.4908254468308987
+        }
+      ],
+      "sensitivity_high": 0.4280772900763359,
+      "flips_per_day": 1.6515582711651697,
+      "lost_lead_median_min": 0.0,
+      "lost_lead_p90_min": 0.0,
+      "lost_lead_median_min_positive": 0.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 151666,
+          "share": 0.815689269426039,
+          "observed_rate": 0.04836284994659317
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 15633,
+          "share": 0.0840773169262542,
+          "observed_rate": 0.14424614597326169
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 11921,
+          "share": 0.0641134583942862,
+          "observed_rate": 0.2964516399630903
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 6716,
+          "share": 0.03611995525342053,
+          "observed_rate": 0.5425848719475879
+        }
+      ],
+      "seconds": 1.6
+    },
+    {
+      "config": {
+        "promote_dwell_min": 0.0,
+        "promote_min_readings": 1,
+        "demote_margin_frac": 0.25,
+        "demote_dwell_min": 0.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.20406929091216935,
+        0.3240148862721327,
+        0.6087815820350823
+      ],
+      "solved": [
+        {
+          "cut": 0.20406929091216935,
+          "promotions_per_day": 0.6929030049882424,
+          "budget": 0.7,
+          "rate_just_below": 0.7093318797497639,
+          "cut_just_below": 0.19978083042040093
+        },
+        {
+          "cut": 0.3240148862721327,
+          "promotions_per_day": 0.44388385698258864,
+          "budget": 0.45,
+          "rate_just_below": 0.47111319570770294,
+          "cut_just_below": 0.31170471726873594
+        },
+        {
+          "cut": 0.6087815820350823,
+          "promotions_per_day": 0.18223881448428417,
+          "budget": 0.2,
+          "rate_just_below": 0.2093160339986436,
+          "cut_just_below": 0.5430327614764789
+        }
+      ],
+      "sensitivity_high": 0.2904937977099237,
+      "flips_per_day": 1.6800045635763226,
+      "lost_lead_median_min": 0.0,
+      "lost_lead_p90_min": 0.0,
+      "lost_lead_median_min_positive": 0.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 168850,
+          "share": 0.908108166250753,
+          "observed_rate": 0.05771986970684039
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 9220,
+          "share": 0.049586954651062734,
+          "observed_rate": 0.23329718004338396
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 4586,
+          "share": 0.02466440065398847,
+          "observed_rate": 0.4563890100305277
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 3280,
+          "share": 0.01764047844419585,
+          "observed_rate": 0.8469512195121951
+        }
+      ],
+      "seconds": 1.3
+    },
+    {
+      "config": {
+        "promote_dwell_min": 0.0,
+        "promote_min_readings": 1,
+        "demote_margin_frac": 0.25,
+        "demote_dwell_min": 60.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.15668687583793423,
+        0.28027222045822286,
+        0.5430327614764789
+      ],
+      "solved": [
+        {
+          "cut": 0.15668687583793423,
+          "promotions_per_day": 0.6970102236786228,
+          "budget": 0.7,
+          "rate_just_below": 0.7061373763239125,
+          "cut_just_below": 0.15459116562585412
+        },
+        {
+          "cut": 0.28027222045822286,
+          "promotions_per_day": 0.44814319488372384,
+          "budget": 0.45,
+          "rate_just_below": 0.4645720696452453,
+          "cut_just_below": 0.2712914738558427
+        },
+        {
+          "cut": 0.5430327614764789,
+          "promotions_per_day": 0.19547318581995424,
+          "budget": 0.2,
+          "rate_just_below": 0.2228546437558233,
+          "cut_just_below": 0.4908254468308987
+        }
+      ],
+      "sensitivity_high": 0.3920562977099237,
+      "flips_per_day": 1.7410043670890087,
+      "lost_lead_median_min": 0.0,
+      "lost_lead_p90_min": 0.0,
+      "lost_lead_median_min_positive": 0.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 151483,
+          "share": 0.8147050598055244,
+          "observed_rate": 0.04797237973898061
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 19289,
+          "share": 0.10373999655795542,
+          "observed_rate": 0.15174451760070506
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 9527,
+          "share": 0.051238060407882285,
+          "observed_rate": 0.32266190826073265
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 5637,
+          "share": 0.03031688322863781,
+          "observed_rate": 0.6208976405889658
+        }
+      ],
+      "seconds": 1.4
+    },
+    {
+      "config": {
+        "promote_dwell_min": 0.0,
+        "promote_min_readings": 1,
+        "demote_margin_frac": 0.25,
+        "demote_dwell_min": 120.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.1309784061836918,
+        0.2556165555267366,
+        0.5430327614764789
+      ],
+      "solved": [
+        {
+          "cut": 0.1309784061836918,
+          "promotions_per_day": 0.6989877734184355,
+          "budget": 0.7,
+          "rate_just_below": 0.7024865152657966,
+          "cut_just_below": 0.12960747827943223
+        },
+        {
+          "cut": 0.2556165555267366,
+          "promotions_per_day": 0.4484474333052335,
+          "budget": 0.45,
+          "rate_just_below": 0.4616818046409036,
+          "cut_just_below": 0.24833902137691147
+        },
+        {
+          "cut": 0.5430327614764789,
+          "promotions_per_day": 0.1899968942327804,
+          "budget": 0.2,
+          "rate_just_below": 0.21600927927185604,
+          "cut_just_below": 0.4908254468308987
+        }
+      ],
+      "sensitivity_high": 0.45026240458015265,
+      "flips_per_day": 1.7692985402894068,
+      "lost_lead_median_min": 0.0,
+      "lost_lead_p90_min": 0.0,
+      "lost_lead_median_min_positive": 0.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 135015,
+          "share": 0.726136950348507,
+          "observed_rate": 0.04156575195348665
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 30119,
+          "share": 0.16198584459168747,
+          "observed_rate": 0.11972509047445135
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 13917,
+          "share": 0.07484833491093709,
+          "observed_rate": 0.2752029891499605
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 6885,
+          "share": 0.03702887014886843,
+          "observed_rate": 0.5403050108932462
+        }
+      ],
+      "seconds": 1.5
+    },
+    {
+      "config": {
+        "promote_dwell_min": 0.0,
+        "promote_min_readings": 1,
+        "demote_margin_frac": 0.5,
+        "demote_dwell_min": 0.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.1615111633320881,
+        0.31170471726873594,
+        0.6087815820350823
+      ],
+      "solved": [
+        {
+          "cut": 0.1615111633320881,
+          "promotions_per_day": 0.6939678394635262,
+          "budget": 0.7,
+          "rate_just_below": 0.7011174423690032,
+          "cut_just_below": 0.15908180749291256
+        },
+        {
+          "cut": 0.31170471726873594,
+          "promotions_per_day": 0.4423626648750404,
+          "budget": 0.45,
+          "rate_just_below": 0.4645720696452453,
+          "cut_just_below": 0.3004611744609069
+        },
+        {
+          "cut": 0.6087815820350823,
+          "promotions_per_day": 0.17782735737239416,
+          "budget": 0.2,
+          "rate_just_below": 0.20338338477920528,
+          "cut_just_below": 0.5430327614764789
+        }
+      ],
+      "sensitivity_high": 0.31518368320610685,
+      "flips_per_day": 1.7825329116250768,
+      "lost_lead_median_min": 0.0,
+      "lost_lead_p90_min": 0.0,
+      "lost_lead_median_min_positive": 0.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 154174,
+          "share": 0.8291777816022717,
+          "observed_rate": 0.04937278659177293
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 22584,
+          "share": 0.12146114792186559,
+          "observed_rate": 0.17140453418349275
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 5759,
+          "share": 0.030973022975647534,
+          "observed_rate": 0.4186490710192742
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 3419,
+          "share": 0.018388047500215127,
+          "observed_rate": 0.8405966656917228
+        }
+      ],
+      "seconds": 1.4
+    },
+    {
+      "config": {
+        "promote_dwell_min": 0.0,
+        "promote_min_readings": 1,
+        "demote_margin_frac": 0.5,
+        "demote_dwell_min": 60.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.648/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.648."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 0.0,
+        "promote_min_readings": 1,
+        "demote_margin_frac": 0.5,
+        "demote_dwell_min": 120.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.559/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.559."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 30.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.0,
+        "demote_dwell_min": 0.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.10806429824312332,
+        0.15247821509302723,
+        0.28027222045822286
+      ],
+      "solved": [
+        {
+          "cut": 0.10806429824312332,
+          "promotions_per_day": 0.6992920118399452,
+          "budget": 0.7,
+          "rate_just_below": 0.7070500915884415,
+          "cut_just_below": 0.10707417649784993
+        },
+        {
+          "cut": 0.15247821509302723,
+          "promotions_per_day": 0.44312326092881454,
+          "budget": 0.45,
+          "rate_just_below": 0.4516419367310849,
+          "cut_just_below": 0.15043698787969334
+        },
+        {
+          "cut": 0.28027222045822286,
+          "promotions_per_day": 0.192126563183348,
+          "budget": 0.2,
+          "rate_just_below": 0.20231855030392148,
+          "cut_just_below": 0.2712914738558427
+        }
+      ],
+      "sensitivity_high": 0.2914479961832061,
+      "flips_per_day": 1.907118545233281,
+      "lost_lead_median_min": 88.0,
+      "lost_lead_p90_min": 4439.2,
+      "lost_lead_median_min_positive": 79.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 162710,
+          "share": 0.8750860511143619,
+          "observed_rate": 0.062110503349517544
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 10281,
+          "share": 0.05529321917218828,
+          "observed_rate": 0.1726485750413384
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 8264,
+          "share": 0.04444540056793735,
+          "observed_rate": 0.2435866408518877
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 4681,
+          "share": 0.025175329145512435,
+          "observed_rate": 0.6139713736381115
+        }
+      ],
+      "seconds": 1.7
+    },
+    {
+      "config": {
+        "promote_dwell_min": 30.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.0,
+        "demote_dwell_min": 60.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.0804139411853259,
+        0.12816557491335911,
+        0.2556165555267366
+      ],
+      "solved": [
+        {
+          "cut": 0.0804139411853259,
+          "promotions_per_day": 0.6971623428893776,
+          "budget": 0.7,
+          "rate_just_below": 0.7014216807905128,
+          "cut_just_below": 0.07988673554853092
+        },
+        {
+          "cut": 0.12816557491335911,
+          "promotions_per_day": 0.44753471804070455,
+          "budget": 0.45,
+          "rate_just_below": 0.45346736726014286,
+          "cut_just_below": 0.12673646952522374
+        },
+        {
+          "cut": 0.2556165555267366,
+          "promotions_per_day": 0.19197444397259317,
+          "budget": 0.2,
+          "rate_just_below": 0.20018888135335391,
+          "cut_just_below": 0.24833902137691147
+        }
+      ],
+      "sensitivity_high": 0.4048783396946565,
+      "flips_per_day": 2.011624443021848,
+      "lost_lead_median_min": 69.0,
+      "lost_lead_p90_min": 3352.5999999999995,
+      "lost_lead_median_min_positive": 61.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 136465,
+          "share": 0.733935332587557,
+          "observed_rate": 0.052489649360641925
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 25127,
+          "share": 0.135137896910765,
+          "observed_rate": 0.11207068094082064
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 16366,
+          "share": 0.08801953360296016,
+          "observed_rate": 0.18159599169008922
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 7978,
+          "share": 0.04290723689871784,
+          "observed_rate": 0.4784407119578842
+        }
+      ],
+      "seconds": 1.8
+    },
+    {
+      "config": {
+        "promote_dwell_min": 30.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.0,
+        "demote_dwell_min": 120.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.677/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.677."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 30.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.25,
+        "demote_dwell_min": 0.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.08259740955158973,
+        0.1445539361514015,
+        0.2712914738558427
+      ],
+      "solved": [
+        {
+          "cut": 0.08259740955158973,
+          "promotions_per_day": 0.6992920118399452,
+          "budget": 0.7,
+          "rate_just_below": 0.7018780384227773,
+          "cut_just_below": 0.08203881163742789
+        },
+        {
+          "cut": 0.1445539361514015,
+          "promotions_per_day": 0.4466220027761756,
+          "budget": 0.45,
+          "rate_just_below": 0.4565097514752394,
+          "cut_just_below": 0.14271516491354833
+        },
+        {
+          "cut": 0.2712914738558427,
+          "promotions_per_day": 0.19243080160485768,
+          "budget": 0.2,
+          "rate_just_below": 0.20414398083297944,
+          "cut_just_below": 0.2633290733775253
+        }
+      ],
+      "sensitivity_high": 0.32037213740458015,
+      "flips_per_day": 2.07627510759265,
+      "lost_lead_median_min": 71.5,
+      "lost_lead_p90_min": 3837.8999999999996,
+      "lost_lead_median_min_positive": 60.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 139993,
+          "share": 0.7529096033043627,
+          "observed_rate": 0.05460273013650683
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 30407,
+          "share": 0.16353476465020222,
+          "observed_rate": 0.1233926398526655
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 10137,
+          "share": 0.0545187591429309,
+          "observed_rate": 0.22235375357600867
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 5399,
+          "share": 0.029036872902504087,
+          "observed_rate": 0.5775143545100945
+        }
+      ],
+      "seconds": 1.7
+    },
+    {
+      "config": {
+        "promote_dwell_min": 30.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.25,
+        "demote_dwell_min": 60.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.558/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.558."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 30.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.25,
+        "demote_dwell_min": 120.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.472/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.472."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 30.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.5,
+        "demote_dwell_min": 0.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.481/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.481."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 30.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.5,
+        "demote_dwell_min": 60.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.368/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.368."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 30.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.5,
+        "demote_dwell_min": 120.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.323/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.323."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 60.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.0,
+        "demote_dwell_min": 0.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.09823634697697567,
+        0.13905902740724455,
+        0.24833902137691147
+      ],
+      "solved": [
+        {
+          "cut": 0.09823634697697567,
+          "promotions_per_day": 0.6991398926291904,
+          "budget": 0.7,
+          "rate_just_below": 0.7090276413282542,
+          "cut_just_below": 0.09744699181702536
+        },
+        {
+          "cut": 0.13905902740724455,
+          "promotions_per_day": 0.4482953140944787,
+          "budget": 0.45,
+          "rate_just_below": 0.458639420425807,
+          "cut_just_below": 0.13731088667997537
+        },
+        {
+          "cut": 0.24833902137691147,
+          "promotions_per_day": 0.19927616608882492,
+          "budget": 0.2,
+          "rate_just_below": 0.20688212662656635,
+          "cut_just_below": 0.2415071060291574
+        }
+      ],
+      "sensitivity_high": 0.2885257633587786,
+      "flips_per_day": 1.951537354773691,
+      "lost_lead_median_min": 180.0,
+      "lost_lead_p90_min": 4584.0000000000055,
+      "lost_lead_median_min_positive": 139.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 160587,
+          "share": 0.8636681438774633,
+          "observed_rate": 0.06267630630125726
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 11423,
+          "share": 0.06143511745977111,
+          "observed_rate": 0.163267092707695
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 8744,
+          "share": 0.04702693399879528,
+          "observed_rate": 0.22346752058554437
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 5182,
+          "share": 0.027869804663970398,
+          "observed_rate": 0.5565418757236589
+        }
+      ],
+      "seconds": 1.7
+    },
+    {
+      "config": {
+        "promote_dwell_min": 60.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.0,
+        "demote_dwell_min": 60.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.07136837615588344,
+        0.1176589252218681,
+        0.22382047897962135
+      ],
+      "solved": [
+        {
+          "cut": 0.07136837615588344,
+          "promotions_per_day": 0.6992920118399452,
+          "budget": 0.7,
+          "rate_just_below": 0.7017259192120224,
+          "cut_just_below": 0.07094378490659366
+        },
+        {
+          "cut": 0.1176589252218681,
+          "promotions_per_day": 0.448903790937498,
+          "budget": 0.45,
+          "rate_just_below": 0.4548364401569363,
+          "cut_just_below": 0.11654256103802466
+        },
+        {
+          "cut": 0.22382047897962135,
+          "promotions_per_day": 0.19729861634901216,
+          "budget": 0.2,
+          "rate_just_below": 0.2039918616222246,
+          "cut_just_below": 0.21845401534663647
+        }
+      ],
+      "sensitivity_high": 0.4010615458015267,
+      "flips_per_day": 2.0773399420679337,
+      "lost_lead_median_min": 143.0,
+      "lost_lead_p90_min": 3600.0,
+      "lost_lead_median_min_positive": 120.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 130707,
+          "share": 0.702967687806557,
+          "observed_rate": 0.054572440649697414
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 29619,
+          "share": 0.15929674726787713,
+          "observed_rate": 0.09824774637901347
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 16794,
+          "share": 0.09032140091214182,
+          "observed_rate": 0.17661069429558177
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 8816,
+          "share": 0.04741416401342397,
+          "observed_rate": 0.42638384754990927
+        }
+      ],
+      "seconds": 2.0
+    },
+    {
+      "config": {
+        "promote_dwell_min": 60.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.0,
+        "demote_dwell_min": 120.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.643/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.643."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 60.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.25,
+        "demote_dwell_min": 0.0,
+        "max_gap_min": 240.0
+      },
+      "cuts": [
+        0.07094378490659366,
+        0.1324913588032717,
+        0.2415071060291574
+      ],
+      "solved": [
+        {
+          "cut": 0.07094378490659366,
+          "promotions_per_day": 0.6991398926291904,
+          "budget": 0.7,
+          "rate_just_below": 0.7015738000012677,
+          "cut_just_below": 0.07055293589471057
+        },
+        {
+          "cut": 0.1324913588032717,
+          "promotions_per_day": 0.44494869145787247,
+          "budget": 0.45,
+          "rate_just_below": 0.45346736726014286,
+          "cut_just_below": 0.1309784061836918
+        },
+        {
+          "cut": 0.2415071060291574,
+          "promotions_per_day": 0.19684225871674768,
+          "budget": 0.2,
+          "rate_just_below": 0.20536093451901807,
+          "cut_just_below": 0.23522935677036205
+        }
+      ],
+      "sensitivity_high": 0.32406965648854963,
+      "flips_per_day": 2.125561731877214,
+      "lost_lead_median_min": 172.0,
+      "lost_lead_p90_min": 4283.999999999995,
+      "lost_lead_median_min_positive": 146.0,
+      "bands": [
+        {
+          "band": "LOW",
+          "index": 0,
+          "rows": 130880,
+          "share": 0.7038981154805954,
+          "observed_rate": 0.05569223716381418
+        },
+        {
+          "band": "MEDIUM",
+          "index": 1,
+          "rows": 38220,
+          "share": 0.20555459943206264,
+          "observed_rate": 0.10583464154892726
+        },
+        {
+          "band": "HIGH",
+          "index": 2,
+          "rows": 10957,
+          "share": 0.05892887875397986,
+          "observed_rate": 0.2109153965501506
+        },
+        {
+          "band": "CRITICAL",
+          "index": 3,
+          "rows": 5879,
+          "share": 0.03161840633336202,
+          "observed_rate": 0.5312127912910359
+        }
+      ],
+      "seconds": 1.9
+    },
+    {
+      "config": {
+        "promote_dwell_min": 60.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.25,
+        "demote_dwell_min": 60.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.524/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.524."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 60.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.25,
+        "demote_dwell_min": 120.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.443/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.443."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 60.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.5,
+        "demote_dwell_min": 0.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.447/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.447."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 60.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.5,
+        "demote_dwell_min": 60.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.342/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.342."
+    },
+    {
+      "config": {
+        "promote_dwell_min": 60.0,
+        "promote_min_readings": 2,
+        "demote_margin_frac": 0.5,
+        "demote_dwell_min": 120.0,
+        "max_gap_min": 240.0
+      },
+      "rejected": "budget 0.70/patient-day never binds: the promotion rate peaks at 0.301/day across the whole grid, so no cut is selected by it. Promotion budgets are not alert-hour budgets -- if every configuration lands here, set BAND_PROMOTION_BUDGETS below 0.301."
+    }
+  ],
+  "selection": {
+    "chosen": {
+      "promote_dwell_min": 0.0,
+      "promote_min_readings": 1,
+      "demote_margin_frac": 0.25,
+      "demote_dwell_min": 120.0,
+      "max_gap_min": 240.0
+    },
+    "reference": {
+      "promote_dwell_min": 0.0,
+      "promote_min_readings": 1,
+      "demote_margin_frac": 0.0,
+      "demote_dwell_min": 0.0,
+      "max_gap_min": 240.0
+    },
+    "reference_cuts": [
+      0.23522935677036205,
+      0.3384537827189876,
+      0.6087815820350823
+    ],
+    "chosen_cuts": [
+      0.1309784061836918,
+      0.2556165555267366,
+      0.5430327614764789
+    ],
+    "reference_sensitivity": 0.2696207061068702,
+    "chosen_sensitivity": 0.45026240458015265,
+    "reference_flips_per_day": 1.5799101228996457,
+    "chosen_flips_per_day": 1.7692985402894068,
+    "flip_ceiling": 1.9748876536245572,
+    "rule": "max detection at >= HIGH subject to median lost lead <= 30 min and flips <= 1.25x the no-hysteresis reference",
+    "swept_admissions": 1500,
+    "total_admissions": 5281
+  },
+  "cuts": [
+    {
+      "cut": 0.12530583517457955,
+      "promotions_per_day": 0.6977710769732285,
+      "budget": 0.7,
+      "rate_just_below": 0.7014606354486554,
+      "cut_just_below": 0.12395670349746443
+    },
+    {
+      "cut": 0.2556165555267366,
+      "promotions_per_day": 0.43910191108756774,
+      "budget": 0.45,
+      "rate_just_below": 0.45243766461320756,
+      "cut_just_below": 0.24833902137691147
+    },
+    {
+      "cut": 0.5430327614764789,
+      "promotions_per_day": 0.1881674822467781,
+      "budget": 0.2,
+      "rate_just_below": 0.2107938107286137,
+      "cut_just_below": 0.4908254468308987
+    }
+  ],
+  "rate_profiles": [
+    {
+      "band": "MEDIUM",
+      "profile": [
+        {
+          "quantile": 0.02,
+          "cut": 0.018769528709800212,
+          "promotions_per_day": 0.2677298109284976
+        },
+        {
+          "quantile": 0.1,
+          "cut": 0.024019224301414833,
+          "promotions_per_day": 0.31473464705173954
+        },
+        {
+          "quantile": 0.25,
+          "cut": 0.03282168828802054,
+          "promotions_per_day": 0.43506094275880863
+        },
+        {
+          "quantile": 0.5,
+          "cut": 0.051419935225232166,
+          "promotions_per_day": 0.6723669115363407
+        },
+        {
+          "quantile": 0.75,
+          "cut": 0.09135412936400744,
+          "promotions_per_day": 0.7925410880326549
+        },
+        {
+          "quantile": 0.9,
+          "cut": 0.17537880230058875,
+          "promotions_per_day": 0.5785093585006116
+        },
+        {
+          "quantile": 0.98,
+          "cut": 0.5430327614764789,
+          "promotions_per_day": 0.18756298686070316
+        }
+      ]
+    },
+    {
+      "band": "HIGH",
+      "profile": [
+        {
+          "quantile": 0.02,
+          "cut": 0.018769528709800212,
+          "promotions_per_day": 2.4113937288855367
+        },
+        {
+          "quantile": 0.1,
+          "cut": 0.024019224301414833,
+          "promotions_per_day": 2.3742766414613583
+        },
+        {
+          "quantile": 0.25,
+          "cut": 0.03282168828802054,
+          "promotions_per_day": 2.17834709800914
+        },
+        {
+          "quantile": 0.5,
+          "cut": 0.051419935225232166,
+          "promotions_per_day": 1.6850244975312318
+        },
+        {
+          "quantile": 0.75,
+          "cut": 0.09135412936400744,
+          "promotions_per_day": 1.0998218937574078
+        },
+        {
+          "quantile": 0.9,
+          "cut": 0.17537880230058875,
+          "promotions_per_day": 0.6352498241121626
+        },
+        {
+          "quantile": 0.98,
+          "cut": 0.5430327614764789,
+          "promotions_per_day": 0.18847570212523213
+        }
+      ]
+    },
+    {
+      "band": "CRITICAL",
+      "profile": [
+        {
+          "quantile": 0.02,
+          "cut": 0.018769528709800212,
+          "promotions_per_day": 3.9937377591572596
+        },
+        {
+          "quantile": 0.1,
+          "cut": 0.024019224301414833,
+          "promotions_per_day": 3.7935488778039055
+        },
+        {
+          "quantile": 0.25,
+          "cut": 0.03282168828802054,
+          "promotions_per_day": 3.3286725697371504
+        },
+        {
+          "quantile": 0.5,
+          "cut": 0.051419935225232166,
+          "promotions_per_day": 2.427670484436303
+        },
+        {
+          "quantile": 0.75,
+          "cut": 0.09135412936400744,
+          "promotions_per_day": 1.3823072681291237
+        },
+        {
+          "quantile": 0.9,
+          "cut": 0.17537880230058875,
+          "promotions_per_day": 0.6884915478763524
+        },
+        {
+          "quantile": 0.98,
+          "cut": 0.5430327614764789,
+          "promotions_per_day": 0.1899968942327804
+        }
+      ]
+    }
+  ],
+  "isolation": {
+    "cuts": [
+      0.12530583517457955,
+      0.2556165555267366,
+      0.5430327614764789
+    ],
+    "flips_off": 3.1699975180680937,
+    "flips_on": 1.760408370407963,
+    "flip_reduction_pct": 44.46656944132824,
+    "sensitivity_off": 0.32652097298672045,
+    "sensitivity_on": 0.43304812251348845,
+    "note": "Cuts held fixed so the comparison isolates the machine. In the sweep each configuration re-solves its cuts to hold the promotion budget, which confounds any flip comparison."
+  },
+  "envelope": [
+    {
+      "band": "LOW",
+      "lo": 0.01747659465662695,
+      "hi": 0.06524933119674024,
+      "calibration_rate": 0.040499319949469384
+    },
+    {
+      "band": "MEDIUM",
+      "lo": 0.0886936693342262,
+      "hi": 0.13951293840867593,
+      "calibration_rate": 0.11416269989837942
+    },
+    {
+      "band": "HIGH",
+      "lo": 0.21912196339568354,
+      "hi": 0.2827915524764303,
+      "calibration_rate": 0.2505793869430233
+    },
+    {
+      "band": "CRITICAL",
+      "lo": 0.4935878612849389,
+      "hi": 0.5718549261315414,
+      "calibration_rate": 0.5318636930084655
+    }
+  ],
+  "test": {
+    "base_rate": 0.08326108986303161,
+    "sensitivity_high": 0.43617689553363903,
+    "flips_per_day": 1.7481220269252669,
+    "lost_lead_median_min": 0.0,
+    "lost_lead_p90_min": 0.0,
+    "lost_lead_median_min_positive": 0.0,
+    "stays_reaching_high": 4205,
+    "saturation": 1.902238337633359,
+    "ratchet": [
+      {
+        "quartile": 0,
+        "stays": 1628,
+        "rows": 16182,
+        "median_hours": 5.0,
+        "displayed": 0.09788654060066741,
+        "instant": 0.06414534668149796,
+        "ratio": 1.5260115606936417
+      },
+      {
+        "quartile": 1,
+        "stays": 1629,
+        "rows": 50149,
+        "median_hours": 21.466666666666665,
+        "displayed": 0.06450776685477277,
+        "instant": 0.03822608626293645,
+        "ratio": 1.6875326030255606
+      },
+      {
+        "quartile": 2,
+        "stays": 1629,
+        "rows": 135412,
+        "median_hours": 66.0,
+        "displayed": 0.038674563554190175,
+        "instant": 0.020249313207101292,
+        "ratio": 1.909919766593727
+      },
+      {
+        "quartile": 3,
+        "stays": 1631,
+        "rows": 563032,
+        "median_hours": 229.38333333333333,
+        "displayed": 0.03059151167251595,
+        "instant": 0.015352590971738729,
+        "ratio": 1.992596020360944
+      }
+    ],
+    "ratchet_growth": 1.3057542103122852,
+    "patient_days": 27223.5,
+    "bands": [
+      {
+        "band": "LOW",
+        "index": 0,
+        "rows": 546967,
+        "share": 0.7151998953940701,
+        "observed_rate": 0.03833686492969411,
+        "lift": 0.46044154589809055
+      },
+      {
+        "band": "MEDIUM",
+        "index": 1,
+        "rows": 135606,
+        "share": 0.17731489653819751,
+        "observed_rate": 0.1101204961432385,
+        "lift": 1.3225925378155854
+      },
+      {
+        "band": "HIGH",
+        "index": 2,
+        "rows": 54922,
+        "share": 0.07181458598934327,
+        "observed_rate": 0.24796984814828302,
+        "lift": 2.978220061209924
+      },
+      {
+        "band": "CRITICAL",
+        "index": 3,
+        "rows": 27280,
+        "share": 0.03567062207838907,
+        "observed_rate": 0.5188782991202346,
+        "lift": 6.231942195013466
+      }
+    ]
+  },
+  "generated_at": "2026-08-07 21:44:57",
+  "seconds": 58.5
+}

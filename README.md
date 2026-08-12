@@ -51,7 +51,7 @@ directory:
 ..\.venv\Scripts\python.exe -m pipeline.run_all                 # build data, skip what is current
 ..\.venv\Scripts\python.exe -m pipeline.run_all --force         # rebuild from the 42 GB source
 ..\.venv\Scripts\python.exe -m pipeline.run_all --with-training # add the bake-off and evaluation
-..\.venv\Scripts\python.exe -m pipeline.verify                  # faithfulness, parity, leakage checks
+..\.venv\Scripts\python.exe -m pipeline.tools.verify                  # faithfulness, parity, leakage checks
 ```
 
 Every stage writes a manifest of its input fingerprints and config hash and **skips itself

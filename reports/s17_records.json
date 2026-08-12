@@ -1,0 +1,184 @@
+{
+  "records": 58765,
+  "admissions": 500,
+  "admissions_available": 6517,
+  "admissions_dropped": 6017,
+  "bytes_gzipped": 8366030,
+  "bytes_uncompressed": 160140869,
+  "format": "gzipped JSONL -- one complete JSON object per line; parse with json.loads() per line, not json.load() on the file",
+  "schema_version": "1.2.0",
+  "reconstruction": {
+    "max": 1.2245271063804353e-06,
+    "mean": 3.255645733892028e-08,
+    "tolerance": 1e-05
+  },
+  "documentation_share": {
+    "median": 0.10065243655076063,
+    "p90": 0.1999312188366491,
+    "mean": 0.11621840766089957,
+    "top_contributor_is_documentation": 0.0022122011401344336
+  },
+  "imputed_share": {
+    "median": 0.008271690742482884,
+    "p90": 0.2586949550649112,
+    "p99": 0.36659553112060533,
+    "mean": 0.059297614619224885,
+    "max": 0.519313418686653
+  },
+  "attribution_age_min": {
+    "median": 79.41910761164425,
+    "p90": 684.529104978458,
+    "p99": 4038.5553126665377,
+    "undefined": 0
+  },
+  "top_contributors": [
+    {
+      "feature": "spo2_locf",
+      "share_of_readings": 0.5953203437420234,
+      "kind": "physiology",
+      "group": "t2_timeseries"
+    },
+    {
+      "feature": "peep_locf",
+      "share_of_readings": 0.1990300348847103,
+      "kind": "physiology",
+      "group": "t2_timeseries"
+    },
+    {
+      "feature": "fio2_locf",
+      "share_of_readings": 0.11205649621373266,
+      "kind": "physiology",
+      "group": "t2_timeseries"
+    },
+    {
+      "feature": "first_careunit",
+      "share_of_readings": 0.028282140730026377,
+      "kind": "physiology",
+      "group": "t1_static"
+    },
+    {
+      "feature": "race",
+      "share_of_readings": 0.01429422275163788,
+      "kind": "physiology",
+      "group": "t1_static"
+    },
+    {
+      "feature": "vasopressor_rate",
+      "share_of_readings": 0.012030970815961882,
+      "kind": "physiology",
+      "group": "t3_interventions"
+    },
+    {
+      "feature": "pip_locf",
+      "share_of_readings": 0.00864460137837148,
+      "kind": "physiology",
+      "group": "t2_timeseries"
+    },
+    {
+      "feature": "ventilator_mode",
+      "share_of_readings": 0.007572534671998639,
+      "kind": "physiology",
+      "group": "t3_interventions"
+    },
+    {
+      "feature": "vent_hours",
+      "share_of_readings": 0.006023993873904535,
+      "kind": "physiology",
+      "group": "t1_static"
+    },
+    {
+      "feature": "weight_kg",
+      "share_of_readings": 0.005019994894920446,
+      "kind": "physiology",
+      "group": "t1_static"
+    },
+    {
+      "feature": "cci_chronic_pulmonary",
+      "share_of_readings": 0.003624606483451034,
+      "kind": "physiology",
+      "group": "t1_static"
+    },
+    {
+      "feature": "peep_final",
+      "share_of_readings": 0.0033353186420488385,
+      "kind": "physiology",
+      "group": "t2_timeseries"
+    },
+    {
+      "feature": "spo2_delta_t_min",
+      "share_of_readings": 0.0019739640942738022,
+      "kind": "documentation",
+      "group": "t2_timeseries"
+    },
+    {
+      "feature": "cci_cerebrovascular",
+      "share_of_readings": 0.0011571513656087808,
+      "kind": "physiology",
+      "group": "t1_static"
+    },
+    {
+      "feature": "minute_volume_locf",
+      "share_of_readings": 0.00044244022802688676,
+      "kind": "physiology",
+      "group": "t2_timeseries"
+    }
+  ],
+  "telemetry_provenance": {
+    "spo2": {
+      "measured": 0.9528120479877478,
+      "carried_forward": 0.04334212541478771,
+      "population_reference": 0.0038458265974644773
+    },
+    "fio2": {
+      "measured": 0.22268357015230153,
+      "carried_forward": 0.6422700587084149,
+      "population_reference": 0.13504637113928358
+    },
+    "flow_rate": {
+      "measured": 0.08959414617544456,
+      "carried_forward": 0.2991746788054114,
+      "population_reference": 0.611231175019144
+    },
+    "peep": {
+      "measured": 0.1990130179528631,
+      "carried_forward": 0.5916446864630307,
+      "population_reference": 0.2093422955841062
+    },
+    "pip": {
+      "measured": 0.1800901897387901,
+      "carried_forward": 0.5805496468986642,
+      "population_reference": 0.23936016336254573
+    },
+    "respiratory_rate_total": {
+      "measured": 0.17156470688334893,
+      "carried_forward": 0.5564366544711988,
+      "population_reference": 0.2719986386454522
+    },
+    "minute_volume": {
+      "measured": 0.18665872543180465,
+      "carried_forward": 0.594843869650302,
+      "population_reference": 0.2184974049178933
+    },
+    "tidal_volume_observed": {
+      "measured": 0.18083893474006638,
+      "carried_forward": 0.5802263251935676,
+      "population_reference": 0.23893474006636603
+    },
+    "etco2": {
+      "measured": 0.036348166425593464,
+      "carried_forward": 0.137258572279418,
+      "population_reference": 0.8263932612949885
+    },
+    "inspiratory_ratio": {
+      "measured": 0.04684761337530843,
+      "carried_forward": 0.16069088743299584,
+      "population_reference": 0.7924614991916957
+    },
+    "expiratory_ratio": {
+      "measured": 0.046915681102697185,
+      "carried_forward": 0.16055475197821834,
+      "population_reference": 0.7925295669190845
+    }
+  },
+  "seconds": 21.9
+}

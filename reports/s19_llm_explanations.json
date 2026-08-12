@@ -1,0 +1,104 @@
+{
+  "schema_version": "1.0.0",
+  "generated": 200,
+  "sample_allocation": {
+    "LOW": 50,
+    "MEDIUM": 50,
+    "HIGH": 50,
+    "CRITICAL": 50
+  },
+  "sampling": "equal allocation across bands, one reading per stay, seeded. Per-band rates are population rates; the overall figure is an unweighted mean across bands and is not.",
+  "generator_provenance": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "main",
+    "quantisation": "nf4",
+    "dtype": "torch.float16",
+    "device": "cuda:0",
+    "compute_capability": "sm_120",
+    "max_new_tokens": 220,
+    "seed": 20260808,
+    "decoding": "greedy",
+    "transformers": "4.57.6",
+    "torch": "2.11.0+cu128",
+    "bitsandbytes": "0.50.0"
+  },
+  "preflight": {
+    "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+    "compute_capability": "sm_120",
+    "vram_free_gb": 7.39,
+    "vram_total_gb": 8.55,
+    "hub_cache": "D:\\Dev\\Projects\\Pulsemind\\models\\llm\\hub",
+    "quantisation": "nf4",
+    "torch": "2.11.0+cu128",
+    "bitsandbytes": "0.50.0"
+  },
+  "prompt_sha256_16": "a8a5fb725b1c6db5",
+  "retrieval": {
+    "evidence_hash": "ev:62b9e550fc137800:1.0.0",
+    "enabled": true,
+    "keys_available": 57,
+    "context_passages_attached": 200,
+    "action_statements_attached": 398,
+    "note": "guideline_context and suggested_actions are ASSEMBLED from the frozen evidence map, never generated. The model sees guideline_context only, and is told not to restate it; suggested_actions never enters the prompt."
+  },
+  "llm": {
+    "violations": {
+      "TREND_CLAIM": 3,
+      "FABRICATED_NUMBER": 1,
+      "IMPUTED_QUOTED": 1
+    },
+    "warnings": {
+      "POSSIBLE_TREND_CLAIM": 24,
+      "UNSUPPORTED_DRIVER": 16,
+      "POSSIBLE_BAND_MISMATCH": 1
+    },
+    "total_violations": 5,
+    "total_warnings": 41,
+    "median_chars": 583.5
+  },
+  "template": {
+    "violations": {},
+    "warnings": {},
+    "total_violations": 0,
+    "total_warnings": 0,
+    "median_chars": 605.0
+  },
+  "per_band": {
+    "LOW": {
+      "n": 50,
+      "llm_v": 0,
+      "llm_w": 11,
+      "base_v": 0,
+      "base_w": 0
+    },
+    "MEDIUM": {
+      "n": 50,
+      "llm_v": 2,
+      "llm_w": 6,
+      "base_v": 0,
+      "base_w": 0
+    },
+    "HIGH": {
+      "n": 50,
+      "llm_v": 2,
+      "llm_w": 17,
+      "base_v": 0,
+      "base_w": 0
+    },
+    "CRITICAL": {
+      "n": 50,
+      "llm_v": 1,
+      "llm_w": 7,
+      "base_v": 0,
+      "base_w": 0
+    }
+  },
+  "latency": {
+    "median_s": 18.248928904533386,
+    "p90_s": 23.31189858913421,
+    "total_s": 3831.5244600772858,
+    "projected_full_set_hours": 297.8884186319179
+  },
+  "ship_criterion": "zero violations; reported, not asserted, so a failing run still yields the evidence to fix it",
+  "seconds": 3868.4
+}

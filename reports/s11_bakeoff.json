@@ -1,0 +1,162 @@
+{
+  "phase_a": {
+    "documentation_only": {
+      "average_precision": 0.5454515964121553,
+      "roc_auc": 0.9286675128152697,
+      "brier": 0.106277834129257,
+      "positive_rate": 0.05300940543055602,
+      "features": 33,
+      "seconds": 23.1,
+      "best_iteration": 390
+    },
+    "final_only": {
+      "average_precision": 0.16371366753369532,
+      "roc_auc": 0.7339183930965676,
+      "brier": 0.20268869607569073,
+      "positive_rate": 0.05300940543055602,
+      "features": 11,
+      "seconds": 15.0,
+      "best_iteration": 249
+    },
+    "t2_all": {
+      "average_precision": 0.6175927559545277,
+      "roc_auc": 0.9476463496088131,
+      "brier": 0.08891242444624801,
+      "positive_rate": 0.05300940543055602,
+      "features": 55,
+      "seconds": 44.7,
+      "best_iteration": 666
+    },
+    "full": {
+      "average_precision": 0.6363777532561393,
+      "roc_auc": 0.9520953632091615,
+      "brier": 0.08505897591489439,
+      "positive_rate": 0.05300940543055602,
+      "features": 102,
+      "seconds": 43.6,
+      "best_iteration": 428
+    }
+  },
+  "phase_b": {
+    "lightgbm": {
+      "best_params": {
+        "learning_rate": 0.010452974688131843,
+        "num_leaves": 501,
+        "min_data_in_leaf": 631,
+        "feature_fraction": 0.5054342652280431,
+        "bagging_fraction": 0.5162699905112761,
+        "lambda_l1": 0.0018056790451925527,
+        "lambda_l2": 0.08464188343830302,
+        "max_bin": 63
+      },
+      "tuning_seconds": 642.4,
+      "tuning_best_ap": 0.4213553297550008,
+      "trials_completed": 12,
+      "trials_requested": 12,
+      "cv_seconds": 564.8,
+      "folds": [
+        {
+          "average_precision": 0.4216962509775407,
+          "roc_auc": 0.7894267300956844,
+          "brier": 0.1416206085077892,
+          "positive_rate": 0.08514654562720599
+        },
+        {
+          "average_precision": 0.39359294705289705,
+          "roc_auc": 0.7757081222934649,
+          "brier": 0.14044898416590212,
+          "positive_rate": 0.08108099583832057
+        },
+        {
+          "average_precision": 0.4294923106412069,
+          "roc_auc": 0.7891463726319052,
+          "brier": 0.1434870085687732,
+          "positive_rate": 0.0869638109457615
+        },
+        {
+          "average_precision": 0.392278693957136,
+          "roc_auc": 0.7719408795307131,
+          "brier": 0.1403945916226612,
+          "positive_rate": 0.08150689273176753
+        },
+        {
+          "average_precision": 0.42377838721737116,
+          "roc_auc": 0.7860067807395501,
+          "brier": 0.14134527460281607,
+          "positive_rate": 0.08661058044051866
+        }
+      ],
+      "ap_mean": 0.41216771796923035,
+      "ap_std": 0.01591438018697564
+    },
+    "xgboost": {
+      "best_params": {
+        "learning_rate": 0.03067591307513953,
+        "max_depth": 10,
+        "min_child_weight": 197.43682406495523,
+        "subsample": 0.9968676185612808,
+        "colsample_bytree": 0.5040206103892897,
+        "reg_alpha": 0.07069331472481809,
+        "reg_lambda": 0.0013014031840021581
+      },
+      "tuning_seconds": 372.4,
+      "tuning_best_ap": 0.4239426371599113,
+      "trials_completed": 12,
+      "trials_requested": 12,
+      "cv_seconds": 120.4,
+      "folds": [
+        {
+          "average_precision": 0.4239426371599113,
+          "roc_auc": 0.7909158992226163,
+          "brier": 0.16022689640522003,
+          "positive_rate": 0.08514654562720599
+        },
+        {
+          "average_precision": 0.3941781957699163,
+          "roc_auc": 0.7761772495286385,
+          "brier": 0.15822210907936096,
+          "positive_rate": 0.08108099583832057
+        },
+        {
+          "average_precision": 0.4299953821102893,
+          "roc_auc": 0.7881521431781919,
+          "brier": 0.16038796305656433,
+          "positive_rate": 0.0869638109457615
+        },
+        {
+          "average_precision": 0.3962469709303246,
+          "roc_auc": 0.7732979089043257,
+          "brier": 0.15860658884048462,
+          "positive_rate": 0.08150689273176753
+        },
+        {
+          "average_precision": 0.4202303507277965,
+          "roc_auc": 0.784245107700706,
+          "brier": 0.15985864400863647,
+          "positive_rate": 0.08661058044051866
+        }
+      ],
+      "ap_mean": 0.41291870733964764,
+      "ap_std": 0.014803739714930214
+    },
+    "catboost": {
+      "status": "excluded -- not viable on this hardware",
+      "gpu": {
+        "usable": false,
+        "error": "CUDA error 218: a PTX JIT compilation failed (ptxas: memory allocation failure)",
+        "reason": "catboost 1.2.10 ships no sm_120 (Blackwell) kernels; the runtime PTX JIT fails on the RTX 5060. Its GPU build also cannot compute PRAUC."
+      },
+      "cpu": {
+        "seconds_per_trial": 1883,
+        "iterations_cap": 800,
+        "note": "already handicapped to 800 iterations vs 3000-with-early-stopping for the other candidates, and still 23x slower per fit than LightGBM (~82s) and 31x slower than XGBoost (~61s)."
+      },
+      "tuning_best_ap": 0.6248,
+      "trials_completed": 1,
+      "trials_requested": 12,
+      "cv_completed": false,
+      "cv_estimated_hours": 2.6,
+      "conclusion": "Cut after the single completed trial. Finishing 5-fold CV would cost ~2.6 h to refine a candidate already ruled out on two independent grounds (no GPU support, 23-31x slower on CPU) whose untuned AP 0.6248 trails LightGBM 0.6400 and XGBoost 0.6407."
+    }
+  }
+}

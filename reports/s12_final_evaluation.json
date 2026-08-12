@@ -1,0 +1,155 @@
+{
+  "lightgbm": {
+    "average_precision": 0.4154330411272414,
+    "roc_auc": 0.7859097182756501,
+    "brier": 0.14299279460665862,
+    "positive_rate": 0.08326108986303161,
+    "train_seconds": 142.5,
+    "features": 109,
+    "params_source": "tuned",
+    "inference_us_per_row": 9.65
+  },
+  "xgboost": {
+    "average_precision": 0.41552326715506366,
+    "roc_auc": 0.7860014034111393,
+    "brier": 0.1586088240146637,
+    "positive_rate": 0.08326108986303161,
+    "train_seconds": 31.0,
+    "features": 109,
+    "params_source": "tuned",
+    "inference_us_per_row": 1.67
+  },
+  "new": {
+    "average_precision": 0.41552326715506366,
+    "roc_auc": 0.7860014034111393,
+    "brier": 0.1586088240146637,
+    "positive_rate": 0.08326108986303161,
+    "train_seconds": 31.0,
+    "features": 109,
+    "params_source": "tuned",
+    "inference_us_per_row": 1.67,
+    "algorithm": "xgboost"
+  },
+  "doc_only": {
+    "average_precision": 0.145449065398012,
+    "roc_auc": 0.6283282467725853,
+    "brier": 0.23120752534813246,
+    "positive_rate": 0.08326108986303161
+  },
+  "baseline_small": {
+    "average_precision": 0.16308786140185666,
+    "roc_auc": 0.645916459111776,
+    "brier": 0.23451572554442807,
+    "positive_rate": 0.08326108986303161,
+    "train_seconds": 5.1,
+    "train_rows": 3288
+  },
+  "baseline_scaled": {
+    "average_precision": 0.18031796556647978,
+    "roc_auc": 0.6594555120091942,
+    "brier": 0.22676011809009597,
+    "positive_rate": 0.08326108986303161,
+    "train_seconds": 429.1,
+    "train_rows": 500000
+  },
+  "bootstrap": {
+    "xgboost_vs_lightgbm": {
+      "mean": 6.348358318550129e-05,
+      "lo": -0.002507181417641892,
+      "hi": 0.0020938911017592656,
+      "p_worse": 0.475,
+      "resamples": 200
+    },
+    "new_vs_baseline_small": {
+      "mean": 0.2529930500871015,
+      "lo": 0.24190180211186638,
+      "hi": 0.26535314536974197,
+      "p_worse": 0.0,
+      "resamples": 200
+    },
+    "new_vs_baseline_scaled": {
+      "mean": 0.2357463463147627,
+      "lo": 0.22485115591825228,
+      "hi": 0.24671715955845525,
+      "p_worse": 0.0,
+      "resamples": 200
+    },
+    "new_vs_doc_only": {
+      "mean": 0.27073626376456505,
+      "lo": 0.2580476814783022,
+      "hi": 0.28347602752679735,
+      "p_worse": 0.0,
+      "resamples": 200
+    }
+  },
+  "shap": {
+    "by_group": {
+      "t1_static": 0.2167111039161682,
+      "t2_timeseries": 0.6888769865036011,
+      "t3_interventions": 0.09441173076629639
+    },
+    "documentation_share": 0.1253170520067215,
+    "top_features": [
+      [
+        "spo2_locf",
+        0.2840017080307007
+      ],
+      [
+        "peep_locf",
+        0.2317233681678772
+      ],
+      [
+        "fio2_locf",
+        0.1578522026538849
+      ],
+      [
+        "spo2_final",
+        0.14124414324760437
+      ],
+      [
+        "first_careunit",
+        0.10141843557357788
+      ],
+      [
+        "fio2_final",
+        0.09553259611129761
+      ],
+      [
+        "pip_locf",
+        0.07459524273872375
+      ],
+      [
+        "vasopressor_rate",
+        0.07236948609352112
+      ],
+      [
+        "peep_final",
+        0.06604772806167603
+      ],
+      [
+        "weight_kg",
+        0.05059680715203285
+      ],
+      [
+        "cci_chronic_pulmonary",
+        0.048863865435123444
+      ],
+      [
+        "vent_hours",
+        0.041555944830179214
+      ],
+      [
+        "peep_delta_t_min",
+        0.04113399609923363
+      ],
+      [
+        "ventilator_mode",
+        0.035778433084487915
+      ],
+      [
+        "respiratory_rate_total_locf",
+        0.030218392610549927
+      ]
+    ]
+  }
+}
