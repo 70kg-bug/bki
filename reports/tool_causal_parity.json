@@ -1,0 +1,103 @@
+{
+  "stays": 120,
+  "rows": 13356,
+  "scoring_device": "cuda",
+  "frame_parity": {
+    "rows_compared": 12578,
+    "max_abs_delta": 0.0,
+    "mean_abs_delta": 0.0,
+    "tolerance": 1e-09,
+    "exact": true
+  },
+  "timeseries_parity": {
+    "rows_compared": 13356,
+    "columns_disagreeing_unexpectedly": [],
+    "structurally_missing_disagreement": {
+      "spo2_structurally_missing_in_stay": 44,
+      "fio2_structurally_missing_in_stay": 281,
+      "flow_rate_structurally_missing_in_stay": 347,
+      "peep_structurally_missing_in_stay": 337,
+      "pip_structurally_missing_in_stay": 364,
+      "respiratory_rate_total_structurally_missing_in_stay": 445,
+      "minute_volume_structurally_missing_in_stay": 300,
+      "tidal_volume_observed_structurally_missing_in_stay": 337,
+      "etco2_structurally_missing_in_stay": 731,
+      "inspiratory_ratio_structurally_missing_in_stay": 414,
+      "expiratory_ratio_structurally_missing_in_stay": 414
+    }
+  },
+  "causal_cost": {
+    "note": "What it costs to serve this model without future information. The trained form of these twelve features is not obtainable at time t, so this is a floor on serving error, not a defect to be fixed by better engineering.",
+    "redefined": {
+      "*_structurally_missing_in_stay (11)": "never observed in the stay -> not observed so far",
+      "vent_hours": "total episode length -> hours since ventilation started"
+    },
+    "by_variant": {
+      "structurally_missing x11": {
+        "score_shift_mean": 0.0007806761879542389,
+        "score_shift_p99": 0.020235399634025854,
+        "score_shift_max": 0.17603553234333413,
+        "band_disagreement_rate": 0.008460616951182989
+      },
+      "vent_hours": {
+        "score_shift_mean": 0.012578682425337561,
+        "score_shift_p99": 0.16410831801223216,
+        "score_shift_max": 0.33708573903200356,
+        "band_disagreement_rate": 0.07951482479784366
+      },
+      "both": {
+        "score_shift_mean": 0.013714652137876721,
+        "score_shift_p99": 0.17083134067707711,
+        "score_shift_max": 0.34166396505551444,
+        "band_disagreement_rate": 0.08887391434561245
+      }
+    }
+  },
+  "record_parity": {
+    "rows": 400,
+    "max_abs_delta": {
+      "documentation_share": 0.0,
+      "imputed_share": 0.0,
+      "attribution_total": 9.099999997985719e-07,
+      "attribution_age_min": 0.00010000000000331966
+    },
+    "cohort_defaults_carrying_an_age": 213,
+    "telemetry_entries": 4400,
+    "top_contributor_agreement": 1.0,
+    "reconstruction_rate": 1.0,
+    "ok": true
+  },
+  "vent_hours_leak": {
+    "definition": "s01_cohort_strict.py:50 -- date_diff('hour', vent_start, vent_end)",
+    "stays": 39319,
+    "constant_within_stay": 39319,
+    "share_total_ge_observed_span": 0.9471103887453038,
+    "records_sampled": 12578,
+    "in_top8_readings": 1851,
+    "attribution_share_when_present_mean": 0.05877667289200464,
+    "attribution_share_when_present_max": 0.2337578167278623,
+    "ranked_first_in_sampled_readings": 92,
+    "verdict": "Future information. features.json documents every feature as at or before t; this one is the length of the completed episode, known only once ventilation has ended."
+  },
+  "push_parity": {
+    "stays": 120,
+    "readings": 13962,
+    "columns": 109,
+    "unexpected": {},
+    "by_design": {
+      "etco2_structurally_missing_in_stay": 903,
+      "expiratory_ratio_structurally_missing_in_stay": 359,
+      "fio2_structurally_missing_in_stay": 266,
+      "flow_rate_structurally_missing_in_stay": 1690,
+      "inspiratory_ratio_structurally_missing_in_stay": 359,
+      "minute_volume_structurally_missing_in_stay": 587,
+      "peep_structurally_missing_in_stay": 585,
+      "pip_structurally_missing_in_stay": 605,
+      "respiratory_rate_total_structurally_missing_in_stay": 658,
+      "spo2_structurally_missing_in_stay": 43,
+      "tidal_volume_observed_structurally_missing_in_stay": 677,
+      "vent_hours": 13927
+    },
+    "ok": true
+  }
+}

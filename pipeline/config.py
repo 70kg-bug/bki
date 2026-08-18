@@ -155,6 +155,7 @@ RPT_VERIFY = REPORTS / "verify.json"
 RPT_TOOL_ABLATION = REPORTS / "tool_method_ablation.json"
 RPT_TOOL_GATE_PIVOT = REPORTS / "tool_gate_pivot.json"
 RPT_TOOL_TARGETS = REPORTS / "tool_target_candidates.json"
+RPT_TOOL_CAUSAL_PARITY = REPORTS / "tool_causal_parity.json"
 
 # --------------------------------------------------------------------------
 # Keep every temporary file on D:. The C: drive is tight (~13 GB), and a

@@ -479,6 +479,44 @@ results.
 | 5 | **DuckDB CSV parse failure.** | MIMIC contains RFC4180 doubled quotes such as `"1"" Packing"` (an inch mark); the scan died at line 121,491. | `escape='"'` set explicitly. |
 | 6 | **Target column silently dropped.** | The original `result[ordered]` reorder omits `warning`, which is why the training notebook re-reads the raw CSV to recover it. | Label preserved through imputation. |
 
+### ⚠️ 7.1 OPEN — `vent_hours` is future information. Flagged for removal.
+
+Found on 2026-08-17 while building the serving-time feature assembly, and **not fixed**:
+training is finalised, so this is recorded for the next retrain rather than acted on.
+
+`s01_cohort_strict.py:50` defines it as `date_diff('hour', vent_start, vent_end)` — the
+length of the **completed** ventilation episode — and `s02_table1_static.py:169` broadcasts
+it per admission. Every reading in a stay therefore carries how long that stay will
+ultimately last, including the first, before any of it has elapsed.
+
+`build/features.json` documents `full` as "109 features, all at or before *t*". This one is
+not, and the existing leakage guards do not catch it: they check for `leaky_` prefixes,
+identifiers and forward-label columns, none of which describe a whole-stay aggregate.
+
+Measured (`python -m pipeline.tools.serving_parity` → `reports/tool_causal_parity.json`):
+
+| | |
+|---|---|
+| Constant within the stay | **39,319 of 39,319 stays (100%)** |
+| Total ≥ the span already observed | **94.7%** of stays with >5 readings |
+| In the stored top-8 | 1,851 of 12,578 sampled readings (**14.72%**); ranked 1st in 92 |
+| Share of \|attribution\| when present | mean 0.059, max 0.234 |
+
+The top-8 row is a share of the 120-stay sample the harness draws, not of the 58,765-record
+file — `records_sampled` is persisted in the JSON so the two bases cannot be confused.
+
+**Why it matters beyond tidiness.** Ventilation lasts longer for patients who deteriorate,
+so the feature is partly an outcome. Serving it causally — "hours since ventilation started",
+the only form obtainable at time *t* — moves the **displayed band on 7.95% of readings**.
+The eleven `*_structurally_missing_in_stay` features, redefined the same way, move 0.85%.
+Nearly the whole train/serve gap is this one column.
+
+AUROC 0.7860 and AP 0.4155 in §2 were measured with it in the feature set.
+
+**Recommended fix at the next retrain:** replace with elapsed hours at *t*
+(`charttime - vent_start`), which is causal and is almost certainly what was intended, then
+re-measure. The serving path already uses that form; `core/features.py` marks it.
+
 ---
 
 ## 8. Verification
