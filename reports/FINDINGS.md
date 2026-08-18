@@ -517,6 +517,54 @@ AUROC 0.7860 and AP 0.4155 in §2 were measured with it in the feature set.
 (`charttime - vent_start`), which is causal and is almost certainly what was intended, then
 re-measure. The serving path already uses that form; `core/features.py` marks it.
 
+### ⚠️ 7.2 OPEN — grounding checks numbers, not the units attached to them
+
+Found on 2026-08-18 while verifying the 7B end to end against a live serving stack. The
+generator produced, and the checker **passed**, this sentence:
+
+> "The patient's PEEP was carried forward from **0.45 hours** ago … **Minute volume** and
+> tidal volume were also **carried forward** from 0.45 hours ago, measured at this reading."
+
+Two false claims in one sentence, on a screen whose stated purpose is that every value
+carries where it came from:
+
+| Claim | Record |
+|---|---|
+| PEEP charted "0.45 hours" ago | `age_min = 0.45` — 27 **seconds**, not 27 minutes. Out by **60×** |
+| Minute volume "carried forward" | `source = measured`, `age_min = 0`. PEEP and tidal volume were the carried-forward ones |
+
+**Why the checker let it through.** `grounding.py` re-derives the allowed-number set from the
+record and asks whether every number in the text is a member of it. `0.45` is a member, so
+the claim passes — the check has no opinion about the **unit** written beside a number, nor
+about a **provenance** word attached to a parameter. Its independence from `explain.py` is
+what makes it valuable, and this is a gap in what it covers rather than a defect in that
+design.
+
+**Why the generator reached for the raw number.** `build_payload` gives each telemetry entry
+BOTH a rendered phrase and the raw figure:
+
+```python
+"age_min": v.get("age_min"),          # 0.45
+"age":     age_phrase(v.get("age_min"))   # "measured at this reading"
+```
+
+`age_phrase` is correct — under a minute it returns "measured at this reading" precisely so
+no unit has to be chosen. The model ignored it, took the bare `0.45`, supplied its own unit,
+and then appended the correct phrase to the end of the same sentence, producing a
+self-contradiction that no numeric check can see.
+
+**Two candidate fixes, and they are not equivalent.** Withholding `age_min` from the prompt
+removes the bare number the model misused, but it changes every generation and so
+invalidates any generation already verified; note also that the staleness filter later in
+the same module reads `t["age_min"]` off the payload. Extending the checker to verify units
+and provenance words leaves generation untouched and turns the bad sentence into a rejection
+that falls back to the template floor — which is the behaviour the floor exists for. The
+second is the smaller change and the safer one to make first.
+
+**Not a blocker for the local demo.** The template floor produces correct prose for the same
+record, and the service takes `use_llm: false` to select it. It is a blocker for anything a
+clinician reads.
+
 ---
 
 ## 8. Verification
