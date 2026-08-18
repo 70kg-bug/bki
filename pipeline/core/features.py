@@ -1,31 +1,20 @@
 """Build the 109-column feature row for one reading, at serving time.
 
-The pipeline assembles features once, over the whole cohort, with window
-functions (`s07_impute.build_expressions`, `s08_table3_interventions`,
-`s02_table1_static`). None of that is available to a service holding one bed and
-one new set of numbers, so the same definitions are restated here as a small
-per-stay state machine.
+s07/s08/s02 assemble these once over the whole cohort with window functions; a
+service holds one bed, so the definitions are restated here as a per-stay state
+machine. `tools.push_parity` diffs all 109 columns against the model matrix.
 
-Restating them is a risk, so the restatement is checked rather than trusted:
-`tools.push_parity` replays real stays through `push()` and diffs all 109
-columns against the model matrix, and `tools.serving_parity` diffs the resulting
-scores against the records the pipeline emitted. Those are the reason to believe
-this file.
+TWELVE CANNOT BE SERVED AS TRAINED, and take their causal reading instead:
 
-TWELVE FEATURES CANNOT BE SERVED AS TRAINED:
+  `{p}_structurally_missing_in_stay` (11)  `observed.sum().over("stay_id") == 0`
+      is an aggregate over the whole stay, future included.
+  `vent_hours`  `date_diff('hour', vent_start, vent_end)` is known only once
+      ventilation has ended.
 
-  `{p}_structurally_missing_in_stay` (11) is `(observed.sum().over("stay_id") == 0)`
-      -- an aggregate over the WHOLE stay, future included. At time t the future
-      does not exist.
-  `vent_hours` (1) is `date_diff('hour', vent_start, vent_end)` -- it measures
-      how long ventilation lasted, which is known only once it has ended.
+They sit inside the 33 documentation features carrying 18.1% of this model's
+skill, so the drift is measured rather than assumed small.
 
-Both take the obvious causal reading -- "not observed SO FAR in this stay",
-"hours since ventilation started" -- and both then drift from training. They sit
-inside the 33 documentation features carrying 18.1% of this model's skill, so
-the drift is measured and reported rather than assumed small.
-
-Nothing here imports a stage; `charlson.CHARLSON` is reused rather than copied.
+Imports no stage; `charlson.CHARLSON` is reused rather than copied.
 """
 from __future__ import annotations
 
@@ -56,11 +45,10 @@ NO_INFUSION = -1.0
 # ---------------------------------------------------------------------------
 @dataclass(frozen=True, slots=True)
 class ServingAssets:
-    """Everything models/ knows that the booster file itself does not.
+    """Everything models/ knows that the booster file does not.
 
-    Written by `tools.export_serving_assets`. The category levels are the load
-    -bearing part: XGBoost splits on the integer code behind "MICU", not on the
-    string, so a level list built from anything other than the training row set
+    Written by `tools.export_serving_assets`. XGBoost splits on the integer code
+    behind "MICU", not the string, so a level list built from a different row set
     is a different model that still returns a probability.
     """
 
@@ -94,8 +82,8 @@ class ServingAssets:
     def kind_of(self, feature: str) -> str:
         """'documentation' when the feature describes charting, not the patient.
 
-        The distinction is load-bearing: a generated explanation must never
-        describe a documentation contributor as a change in the patient.
+        A generated explanation must never narrate a documentation contributor as
+        a change in the patient.
         """
         return "documentation" if feature in self.documentation_features else "physiology"
 
@@ -107,10 +95,8 @@ class ServingAssets:
 class Infusion:
     """One infusion interval, as the drug chart records it.
 
-    `ended_at=None` reproduces a MIMIC quirk: s08 tests
-    `COALESCE(endtime, starttime) > charttime`, so an interval with no end time
-    can never be running. An open-ended infusion counts as stopped, not as
-    running forever.
+    s08 tests `COALESCE(endtime, starttime) > charttime`, so `ended_at=None` can
+    never be running: an open-ended infusion counts as stopped, not forever.
     """
 
     group: str
@@ -127,9 +113,8 @@ class Infusion:
 class PatientContext:
     """The static half of the row: HIS/EMR, ADT and the coded diagnosis list.
 
-    Facts about the admission, not features. `pbw_kg`, the seventeen `cci_*`
-    flags and the three `charlson_*` columns are derived here, so a caller
-    supplies only what a hospital system actually holds.
+    `pbw_kg`, the seventeen `cci_*` flags and the three `charlson_*` columns are
+    derived here, so a caller supplies only what a hospital system holds.
     """
 
     sex: str
@@ -144,10 +129,8 @@ class PatientContext:
     insurance: str | None = None
     language: str | None = None
     marital_status: str | None = None
-    # None, not 0.0: `ed_minutes` is NULL on 44.56% of admissions and the
-    # booster learned a direction for that NaN. Zero is an in-range observed
-    # value, so a default routes nearly half of all patients down the wrong
-    # branch, silently.
+    # None, not 0.0: NULL on 44.56% of admissions, and the booster learned a
+    # direction for that NaN. Zero is an in-range observed value.
     hours_admit_to_icu: float | None = None
     ed_minutes: float | None = None
     prior_icu_stays: int = 0
@@ -159,9 +142,8 @@ class PatientContext:
 class Reading:
     """One tick from the bedside.
 
-    `values` carries only the parameters this tick measured. An absent parameter
-    is not zero and not null-in-the-model -- it is unobserved, and the state
-    machine carries the previous value forward.
+    `values` carries only what this tick measured. Absent is not zero and not
+    null: it is unobserved, and the previous value is carried forward.
     """
 
     observed_at: datetime
@@ -174,10 +156,10 @@ class Reading:
 # Static derivations
 # ---------------------------------------------------------------------------
 def predicted_body_weight(height_cm: float | None, sex: str | None) -> float | None:
-    """ARDSNet PBW, from height and sex only -- never actual weight.
+    """ARDSNet PBW, from height and sex only (s02_table1_static.py:140).
 
-    s02_table1_static.py:140. Actual weight moves with fluid balance, which makes
-    the tidal-volume denominator a treatment effect.
+    Never actual weight -- it moves with fluid balance, which would make the
+    tidal-volume denominator a treatment effect.
     """
     if height_cm is None or sex is None:
         return None
@@ -189,8 +171,7 @@ def predicted_body_weight(height_cm: float | None, sex: str | None) -> float | N
 def charlson_flags(icd_codes) -> dict[str, int]:
     """The seventeen `cci_*` flags, from (code, icd_version) pairs.
 
-    The Python form of `charlson.category_sql()` -- same prefix table, same
-    version split, so the two cannot drift.
+    The Python form of `charlson.category_sql()`.
     """
     flags = {name: 0 for name in CHARLSON}
     for code, version in icd_codes:
@@ -203,11 +184,10 @@ def charlson_flags(icd_codes) -> dict[str, int]:
 
 
 def charlson_age_points(age: float | None) -> int:
-    """Standard age adjustment, INCLUSIVE upper bounds.
+    """Standard age adjustment, INCLUSIVE upper bounds (charlson.age_points_sql).
 
-    charlson.age_points_sql(). Unknown age scores 0, not 4 -- the exclusive form
-    used previously charged every patient aged exactly 50/60/70/80 a point too
-    much, and an unguarded NULL the maximum.
+    The exclusive form overcharged every patient aged exactly 50/60/70/80 by a
+    point, and scored unknown age 4 instead of 0.
     """
     if age is None:
         return 0
@@ -218,11 +198,10 @@ def charlson_age_points(age: float | None) -> int:
 
 
 def charlson_comorbidity_score(flags: dict[str, int], hierarchy: bool = True) -> int:
-    """Weighted sum, with the graded-pair hierarchy applied.
+    """Weighted sum with the graded-pair hierarchy (charlson.score_sql).
 
-    charlson.score_sql(hierarchy=True). A patient with metastatic disease is not
-    additionally scored for having cancer; summing both inflated the index and
-    explained 91.94% of the disagreement against MIMIC's own derived table.
+    Summing both halves of a graded pair explained 91.94% of the disagreement
+    against MIMIC's own derived table.
     """
     severe_of = {mild: severe for mild, severe in GRADED_PAIRS} if hierarchy else {}
     total = 0
@@ -237,9 +216,8 @@ def charlson_comorbidity_score(flags: dict[str, int], hierarchy: bool = True) ->
 def static_row(context: PatientContext, hierarchy: bool = True) -> dict[str, object]:
     """The 36 Table-1 columns for one admission, minus `vent_hours`.
 
-    `vent_hours` is excluded because it is the one static column that is not
-    static: as trained it spans the whole ventilation episode, so it depends on
-    the reading time. `StayFeatures` supplies its causal form per reading.
+    `vent_hours` is the one static column that is not static -- `StayFeatures`
+    supplies its causal form per reading.
     """
     flags = charlson_flags(context.icd_codes)
     score = charlson_comorbidity_score(flags, hierarchy)
@@ -275,27 +253,23 @@ def static_row(context: PatientContext, hierarchy: bool = True) -> dict[str, obj
 class StayFeatures:
     """One instance per ventilated stay. Feed it readings in time order.
 
-    Mutable on purpose and mirrored on `bands.BandStepper`: a stream handler
-    holds one per bed alongside one stepper. `snapshot()` / `restore()` exist for
-    the same reason the band machine's do -- a handler restarted without its
-    state loses every carried-forward value at once, and every parameter reads as
-    never measured.
+    One per bed alongside one `bands.BandStepper`. `snapshot()`/`restore()`
+    matter: a handler restarted without its state loses every carried-forward
+    value at once and every parameter reads as never measured.
     """
 
     def __init__(self, context: PatientContext, assets: ServingAssets) -> None:
         self.context = context
         self.assets = assets
         self.static = static_row(context, assets.charlson_hierarchy)
-        # The last value seen per parameter, and when. Absent means the
-        # parameter has not been observed at any point in this stay.
+        # Last value seen per parameter, and when. Absent = never observed.
         self._last_value: dict[str, float] = {}
         self._last_seen: dict[str, datetime] = {}
         self._last_mode: str | None = None
         self._last_mode_at: datetime | None = None
         self._last_reading_at: datetime | None = None
-        # Mode events not yet visible to a row, oldest first. A mode carries
-        # its OWN charttime in s08's ASOF join and need not coincide with a
-        # reading, so it cannot collapse into `_last_mode_at` on arrival.
+        # Not yet visible to a row, oldest first. A mode carries its OWN
+        # charttime in s08's ASOF join and need not coincide with a reading.
         self._pending_modes: list[tuple[datetime, str]] = []
 
     # -- state ------------------------------------------------------------
@@ -328,9 +302,8 @@ class StayFeatures:
     def observe_mode(self, mode: str, at: datetime) -> None:
         """A ventilator mode charted between readings, with its own timestamp.
 
-        The stream delivers a mode change when it happens, not when the next set
-        of numbers arrives. Queued rather than applied because s08's ASOF join is
-        strictly-before: the row at the mode's own instant must not see it.
+        Queued rather than applied: s08's ASOF join is strictly-before, so the
+        row at the mode's own instant must not see it.
         """
         latest = (self._pending_modes[-1][0] if self._pending_modes
                   else self._last_mode_at)
@@ -344,10 +317,8 @@ class StayFeatures:
     def _timeseries_row(self, reading: Reading) -> dict[str, object]:
         """s07_impute.build_expressions, one row at a time.
 
-        Order matters: the current reading updates `last_seen` BEFORE the age is
-        taken, so a parameter measured now has age 0 rather than the gap since
-        the previous reading. The one deliberate difference from the original
-        notebook, and the quantity a model can act on.
+        Order matters: the reading updates `last_seen` BEFORE the age is taken,
+        so a parameter measured now has age 0, not the gap since the last one.
         """
         row: dict[str, object] = {}
         for param in self.assets.frozen_params:
@@ -380,9 +351,8 @@ class StayFeatures:
     def _intervention_row(self, reading: Reading) -> dict[str, object]:
         """s08_table3_interventions, strictly-before intervals only.
 
-        Treatments are given *because* a patient is deteriorating: an infusion
-        starting at the reading's own instant would predict the label
-        beautifully and teach the model nothing.
+        Treatments are given *because* a patient is deteriorating, so an infusion
+        starting at the reading's instant leaks the label.
         """
         now = reading.observed_at
         row: dict[str, object] = {}
@@ -395,13 +365,11 @@ class StayFeatures:
                 max((now - i.started_at).total_seconds() / 60.0 for i in active)
                 if active else NO_INFUSION)
 
-        # STRICTLY BEFORE, like the infusions above and unlike the eleven
-        # parameters: s08 joins with `ASOF LEFT JOIN ... AND d.charttime >
-        # m.charttime`, so a mode charted at the row's own instant is invisible
-        # to it -- `ventilator_mode_age_min == 0` occurs ZERO times in the 4.2M
-        # training rows, minimum 1.0. Draining the queue on the strict inequality
-        # reproduces that AND keeps each event's own charttime, so a mode charted
-        # between readings ages from when it was charted.
+        # STRICTLY BEFORE, unlike the eleven parameters: s08 joins with
+        # `ASOF LEFT JOIN ... AND d.charttime > m.charttime`, and
+        # `ventilator_mode_age_min == 0` occurs ZERO times in 4.2M training rows
+        # (minimum 1.0). Draining on the strict inequality reproduces that and
+        # keeps each event's own charttime.
         if reading.ventilator_mode is not None:
             self.observe_mode(reading.ventilator_mode, now)
         while self._pending_modes and self._pending_modes[0][0] < now:
@@ -417,10 +385,9 @@ class StayFeatures:
     def push(self, reading: Reading) -> pd.DataFrame:
         """Advance the stay by one reading and return its 109-column frame.
 
-        One row, columns in `feature_order`, nine of them `category` with the
-        full training level set attached. Building the categorical from the row's
-        own value would give it one level and code it 0, which scores cleanly and
-        means something else entirely.
+        Nine columns are `category` with the FULL training level set attached.
+        Building one from the row's own value gives it a single level coded 0,
+        which scores cleanly and means something else entirely.
         """
         if self._last_reading_at is not None and reading.observed_at < self._last_reading_at:
             raise ValueError(
@@ -436,8 +403,7 @@ class StayFeatures:
         row.update(self._timeseries_row(reading))
         row.update(self._intervention_row(reading))
 
-        # CAUSAL FORM. As trained this is vent_end - vent_start: the length of
-        # a completed episode.
+        # CAUSAL FORM. As trained: vent_end - vent_start, a completed episode.
         elapsed = reading.observed_at - self.context.ventilation_start
         row["vent_hours"] = elapsed.total_seconds() // 3600.0
 
@@ -457,8 +423,8 @@ class StayFeatures:
         for column, levels in self.assets.categorical.items():
             supplied = row[column]
             frame[column] = pd.Categorical(frame[column], categories=list(levels))
-            # An unseen value becomes code -1: bit-identical to missing, scored
-            # without complaint, and a different answer.
+            # An unseen value becomes code -1 -- indistinguishable from missing,
+            # scored without complaint, and a different answer.
             if supplied is not None and frame[column].isna().iloc[0]:
                 raise ValueError(
                     f"{column}={supplied!r} is not one of the {len(levels)} levels "

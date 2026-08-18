@@ -9,23 +9,6 @@
     "tolerance": 1e-09,
     "exact": true
   },
-  "timeseries_parity": {
-    "rows_compared": 13356,
-    "columns_disagreeing_unexpectedly": [],
-    "structurally_missing_disagreement": {
-      "spo2_structurally_missing_in_stay": 44,
-      "fio2_structurally_missing_in_stay": 281,
-      "flow_rate_structurally_missing_in_stay": 347,
-      "peep_structurally_missing_in_stay": 337,
-      "pip_structurally_missing_in_stay": 364,
-      "respiratory_rate_total_structurally_missing_in_stay": 445,
-      "minute_volume_structurally_missing_in_stay": 300,
-      "tidal_volume_observed_structurally_missing_in_stay": 337,
-      "etco2_structurally_missing_in_stay": 731,
-      "inspiratory_ratio_structurally_missing_in_stay": 414,
-      "expiratory_ratio_structurally_missing_in_stay": 414
-    }
-  },
   "causal_cost": {
     "note": "What it costs to serve this model without future information. The trained form of these twelve features is not obtainable at time t, so this is a floor on serving error, not a defect to be fixed by better engineering.",
     "redefined": {
@@ -58,7 +41,7 @@
     "max_abs_delta": {
       "documentation_share": 0.0,
       "imputed_share": 0.0,
-      "attribution_total": 9.099999997985719e-07,
+      "attribution_total": 5.700000000885552e-07,
       "attribution_age_min": 0.00010000000000331966
     },
     "cohort_defaults_carrying_an_age": 213,

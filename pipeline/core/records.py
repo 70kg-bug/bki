@@ -1,22 +1,18 @@
 """Turn one scored row into the record shape s16 declares and s18 consumes.
 
-s17_records does this over a whole cohort with vectorised column algebra; a
-service holds one row. Restating the definitions for the scalar case means they
-can drift, so `tools.serving_parity` asserts every number here against the
-records s17 actually emitted.
+The scalar restatement of s17_records; `tools.serving_parity` diffs every number
+here against what s17 emitted.
 
-The three shares all take the SAME denominator, the sum of |contribution| across
-all 109 features:
+The three shares share ONE denominator, the sum of |contribution| over all 109
+features:
 
   documentation_share  charting behaviour rather than physiology
   imputed_share        cohort defaults this patient never had
   attribution_total    the denominator itself, so a consumer holding only the
-                       top-8 can express a contributor as a share of the whole
-                       decision rather than of the eight it can see
+                       top-8 can express a share of the whole decision
 
-They are defined over disjoint feature sets, so they compose rather than
-double-count, and `documentation_share + imputed_share <= 1` is checked here as
-s17 checks it.
+Their feature sets are disjoint, so they compose rather than double-count, and
+`documentation_share + imputed_share <= 1` is checked here as s17 checks it.
 """
 from __future__ import annotations
 
@@ -46,10 +42,9 @@ class Telemetry:
 def telemetry_from_frame(frame, assets: ServingAssets) -> list[Telemetry]:
     """Read the eleven parameters back out of the assembled feature row.
 
-    `_locf` separates the three states `measured` alone collapses into two.
     s07_impute.py:86 makes `_final = _locf.fill_null(median)`, so a null `_locf`
-    means the number the model split on is a population statistic
-    (s17_records.telemetry_columns).
+    means the number the model split on is a population statistic -- the third
+    state `measured` alone cannot express.
     """
     row = frame.iloc[0]
     out = []
@@ -61,12 +56,10 @@ def telemetry_from_frame(frame, assets: ServingAssets) -> list[Telemetry]:
         out.append(Telemetry(
             parameter=param,
             value=_clean(row[f"{param}_final"]),
-            # The raw age, matching s17_records.py:314 -- NOT always None when
-            # the source is a cohort default. A parameter last charted beyond the
-            # 240-minute LOCF cutoff has a null `_locf`, so it reads as
-            # `population_reference` while its age is a real number. The
-            # dictionary says age is null there; this follows the emitter and
-            # `tools.serving_parity` counts how often the two disagree.
+            # The raw age, matching s17_records.py:314. NOT always None for a
+            # cohort default: past the 240-minute LOCF cutoff `_locf` is null, so
+            # the source reads `population_reference` while the age is real. The
+            # dictionary says null there; this follows the emitter.
             age_min=_clean(age),
             measured=measured,
             source=("measured" if measured
@@ -80,9 +73,8 @@ def attribution(frame, contributions: np.ndarray, bias: float,
                 assets: ServingAssets) -> dict:
     """Contributors, the signed tail, and the three shares, for one row.
 
-    `contributions` is one row of `Scorer.contributions()`, already rescaled into
-    calibrated-logit space, so sigmoid(sum + tail + bias) is the score in this
-    same record and not a pre-calibration number nobody sees.
+    `contributions` must already be in calibrated-logit space, so
+    sigmoid(sum + tail + bias) is the score this same record reports.
     """
     columns = list(assets.feature_order)
     magnitude = np.abs(contributions)
@@ -104,8 +96,7 @@ def attribution(frame, contributions: np.ndarray, bias: float,
     documentation = sum(magnitude[j] for j, c in enumerate(columns)
                         if c in assets.documentation_features)
 
-    # A value feature rests on a cohort default exactly when `_locf` is null --
-    # it carries the current observation whenever there is one.
+    # A value feature rests on a default exactly when `_locf` is null.
     imputed = 0.0
     weighted_age, age_weight = 0.0, 0.0
     row = frame.iloc[0]
@@ -120,9 +111,8 @@ def attribution(frame, contributions: np.ndarray, bias: float,
         if _isnan(row[f"{param}_locf"]):
             imputed += weight
 
-        # Independent of the imputation branch, deliberately: a parameter last
-        # charted beyond the LOCF cutoff counts as imputed, but its
-        # `_delta_t_min` is a real number and that staleness is the point.
+        # Independent of the imputation branch: past the LOCF cutoff a parameter
+        # counts as imputed, yet its `_delta_t_min` is real and is the point.
         age = row[f"{param}_delta_t_min"]
         if not _isnan(age):
             weighted_age += weight * float(age)
@@ -141,10 +131,8 @@ def attribution(frame, contributions: np.ndarray, bias: float,
         "contributors_bias": round(float(bias), 8),
         "documentation_share": round(doc_share, 4),
         "imputed_share": round(imp_share, 4),
-        # Attribution-WEIGHTED age, not the oldest value in use. At this grain a
-        # row exists because ONE parameter was charted, so something is nearly
-        # always stale; what matters is whether the values the score leaned on
-        # are current.
+        # Attribution-WEIGHTED age, not the oldest value in use: a row exists
+        # because ONE parameter was charted, so something is nearly always stale.
         "attribution_age_min": (round(weighted_age / age_weight, 4)
                                 if age_weight > 0 else None),
         "attribution_total": round(total, 8),
@@ -152,15 +140,10 @@ def attribution(frame, contributions: np.ndarray, bias: float,
 
 
 def reconstructs(record: dict, calibrated: float, tolerance: float = 1e-5) -> bool:
-    """Does the record explain the score it reports?
-
-    Checkable from the record alone, with no access to the model. An explanation
-    that does not add up to its own score is worse than no explanation.
-    """
+    """Does the record add up to the score it reports? Checkable without the model."""
     logit = (sum(c["contribution"] for c in record["contributors"])
              + record["contributors_other"] + record["contributors_bias"])
-    # Clipped, as s17 clips: an integrity check that raises OverflowError on an
-    # extreme record is worse than one that returns False.
+    # Clipped, as s17 clips: this must return False, not raise, on an extreme.
     clipped = max(-_LOGIT_LIMIT, min(_LOGIT_LIMIT, logit))
     return abs(1.0 / (1.0 + math.exp(-clipped)) - calibrated) < tolerance
 

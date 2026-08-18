@@ -1,23 +1,18 @@
-"""Export everything a serving process needs that is not already in models/.
+"""Export what a serving process needs and models/ does not already hold.
 
-`load_scorer()` gets the booster and the calibrator, and the calibrator carries
-`feature_order`. Two things are still missing at serving time, and both fail
-silently:
+The calibrator carries `feature_order`. Two things are still missing, and both
+fail silently:
 
   CATEGORY LEVELS  s11_train.load() does `pdf[c].astype("category")`, so the
-      integer code behind "MICU" is its position in the SORTED UNIQUE values of
-      that column OVER THE ROW SET IT LOADED. XGBoost stores splits against the
-      codes, not the strings, so a level set built from a different row set is a
-      different model that still predicts, still returns a probability, and is
-      wrong. Captured here from the same censored row set training used.
+      code behind "MICU" is its position in the sorted unique values OF THE ROW
+      SET IT LOADED. XGBoost splits on the code, so a level set from a different
+      row set is a different model that still returns a probability. Captured
+      here from the same censored row set training used.
 
   COHORT MEDIANS  `{p}_final` is `{p}_locf` filled with the TRAIN-SPLIT median
-      (s07_impute.py:86). Serving must use the same numbers or imputed rows land
-      somewhere the model never saw.
+      (s07_impute.py:86).
 
-Neither is patient data: 147 category strings from MIMIC's published value sets,
-and 11 medians the frontend already shows as `cohort_default_value`. The output
-goes to models/ because that is where a serving artifact belongs.
+Neither is patient data: 147 category strings and 11 medians.
 
 Run from bki/:  ..\\.venv\\Scripts\\python.exe -m pipeline.tools.export_serving_assets
 """
@@ -42,10 +37,8 @@ CATEGORICAL = ["gender", "admission_type", "admission_location", "insurance",
 def categorical_levels() -> dict[str, list[str]]:
     """The exact `category` levels the booster was fitted against.
 
-    Reproduces s11_train.load() for the categorical columns only: read the model
-    matrix, drop the rows a forward label censors, let pandas derive the
-    categories. Nine string columns instead of 109 keeps it cheap; the row set is
-    identical, which is the part that matters.
+    s11_train.load() for the nine categorical columns only, over the same
+    censored row set -- that identity is the part that matters.
     """
     n_rows = pl.read_parquet(C.MODEL_MATRIX_PQ, columns=["stay_id"]).height
     observed = align_forward_labels(n_rows)[C.TARGET].is_not_null().to_numpy()
@@ -111,9 +104,8 @@ def main() -> None:
         # which no column check can see.
         "contrib_top_k": C.CONTRIB_TOP_K,
         "charlson_hierarchy": C.CHARLSON_HIERARCHY,
-        # Charting behaviour vs physiology, and the source table per feature.
-        # Taken from features.json rather than a name pattern: this is the set
-        # every stage measures doc-share against (s17_records.feature_kinds).
+        # From features.json, not a name pattern: this is the set every stage
+        # measures doc-share against (s17_records.feature_kinds).
         "documentation_features": list(manifest["sets"]["documentation_only"]),
         "feature_group": {c: g for g, cs in manifest["groups"].items() for c in cs},
     }

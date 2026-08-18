@@ -4,12 +4,6 @@
 definition that is subtly wrong still produces a probability, so this replays
 real stays through it and diffs against what the pipeline actually emitted.
 
-Four checks, in increasing order of what they can tell you:
-
-  A  TIME SERIES   Replay each reading's measured values through StayFeatures and
-     diff the 55 s07 columns against the model matrix. Everything except
-     `_structurally_missing_in_stay` must match exactly.
-
   B  FRAME         Assemble a row the serving way -- pd.Categorical with the
      exported level set, float32 everywhere else -- from the matrix's own values,
      score it, and diff against `risk_records.jsonl.gz`. This is the check that
@@ -24,12 +18,15 @@ Four checks, in increasing order of what they can tell you:
      moves a patient across a cut.
 
   G  PUSH          `tools.push_parity`: every one of the 109 columns, through
-     the real `push()`, against real ICD codes, infusions and mode events. A
-     and B between them exercise 55 columns and none of the assembly, which is
-     how a wrong `ventilator_mode` survived both.
+     the real `push()`, against real ICD codes, infusions and mode events.
 
-Sections C, D and F measure; A, B, E and G assert. **Exits non-zero when one of
-those four fails** -- an earlier version could only print.
+Sections C, D and F measure; B, E and G assert, and the run **exits non-zero**
+when one of those three fails.
+
+There was a section A once, replaying the 55 s07 columns through the private
+`_timeseries_row`. G subsumes it -- same replay, the public entry point, all 109
+columns, real sources -- and reaching into a private member is what let a wrong
+`ventilator_mode` pass every check for weeks.
 
 Run from bki/:  ..\\.venv\\Scripts\\python.exe -m pipeline.tools.serving_parity
 """
@@ -67,23 +64,6 @@ def stored_records(stay_ids: set[int]) -> dict[tuple[int, str], dict]:
     return out
 
 
-def replay_timeseries(rows: pl.DataFrame, assets: ServingAssets,
-                      context: PatientContext) -> list[dict]:
-    """Feed one stay's measured values through StayFeatures, reading by reading.
-
-    The raw parameter columns survive into the model matrix (s07 keeps them in
-    `ordered`), so the measured values are recoverable exactly -- no need to
-    invert `_locf`.
-    """
-    state = StayFeatures(context, assets)
-    produced = []
-    for row in rows.iter_rows(named=True):
-        values = {p: row[p] for p in assets.frozen_params if row[p] is not None}
-        reading = Reading(observed_at=row["charttime"], values=values)
-        produced.append(state._timeseries_row(reading))
-    return produced
-
-
 def main() -> None:
     console.rule("[bold cyan]Serving parity")
 
@@ -112,42 +92,6 @@ def main() -> None:
                 .filter(pl.col("stay_id").is_in(stay_ids))
                 .sort("stay_id", "charttime"))
     log(f"matrix slice: {matrix.height:,} rows")
-
-    # ------------------------------------------------------------------ A
-    console.rule("[cyan]A -- time-series restatement")
-    mismatch = {c: 0 for c in ts_cols}
-    compared = 0
-    for stay_id in stay_ids:
-        rows = matrix.filter(pl.col("stay_id") == stay_id)
-        if rows.is_empty():
-            continue
-        context = PatientContext(
-            sex=rows["gender"][0] or "F", age_at_icu=60.0,
-            admission_type="", admission_location="", race="", first_careunit="",
-            ventilation_start=rows["charttime"][0],
-            height_cm=rows["height_cm"][0], weight_kg=rows["weight_kg"][0])
-        produced = replay_timeseries(rows, assets, context)
-        for i, got in enumerate(produced):
-            compared += 1
-            for c in ts_cols:
-                want = rows[c][i]
-                have = got[c]
-                if want is None and have is None:
-                    continue
-                if want is None or have is None or abs(float(want) - float(have)) > 1e-4:
-                    mismatch[c] += 1
-
-    bad = {c: n for c, n in mismatch.items() if n}
-    log(f"compared {compared:,} rows x {len(ts_cols)} columns")
-    expected = {c for c in ts_cols if c.endswith("_structurally_missing_in_stay")}
-    unexpected = {c: n for c, n in bad.items() if c not in expected}
-    for c, n in sorted(bad.items(), key=lambda kv: -kv[1])[:8]:
-        tag = "[yellow]causal, expected[/yellow]" if c in expected else "[red]UNEXPECTED[/red]"
-        log(f"  {c:<52} {n:>8,} ({100*n/compared:5.2f}%)  {tag}")
-    if not unexpected:
-        log("[green]every causal s07 column reproduces exactly[/green]")
-    else:
-        log(f"[red]{len(unexpected)} columns disagree that should not[/red]")
 
     # ------------------------------------------------------------------ B
     console.rule("[cyan]B -- frame construction and scoring")
@@ -249,12 +193,6 @@ def main() -> None:
             "tolerance": TOLERANCE,
             "exact": bool(delta.max() <= TOLERANCE),
         },
-        "timeseries_parity": {
-            "rows_compared": compared,
-            "columns_disagreeing_unexpectedly": sorted(unexpected),
-            "structurally_missing_disagreement": {
-                c: n for c, n in bad.items() if c in expected},
-        },
         "causal_cost": {
             "note": ("What it costs to serve this model without future "
                      "information. The trained form of these twelve features is "
@@ -287,7 +225,6 @@ def main() -> None:
     # and F measure rather than assert -- the causal cost is a property of the
     # model, not a defect -- so only A, B, E and G decide the exit code.
     failed = {
-        "A timeseries": bool(unexpected),
         "B frame parity": bool(delta.max() > TOLERANCE),
         "E record parity": not record_parity["ok"],
         "G push parity": not push["ok"],
