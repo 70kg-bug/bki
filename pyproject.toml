@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pulsemind-bki"
+version = "1.2.0"                     # tracks RISK_SCHEMA_VERSION, the contract consumers see
+description = "PulseMind model and serving core -- ICU ventilation risk, MIMIC-IV 3.1"
+requires-python = ">=3.12"
+
+# The BASE install is what a serving process needs and nothing more.
+# `import pipeline.core.scoring` pulls in numpy alone at import time; xgboost,
+# joblib and scikit-learn are imported inside load_scorer(). pandas is the frame
+# the booster is scored from. Keeping DuckDB, Polars and Optuna out of this list
+# is the whole point of the core/ boundary -- a model service should not have to
+# install a 42 GB ETL stack to score one reading.
+dependencies = [
+    "numpy>=2.0",
+    "pandas>=2.2",
+    "xgboost>=3.0",
+    "scikit-learn>=1.5",
+    "joblib>=1.4",
+]
+
+[project.optional-dependencies]
+# Everything the stages need. Only required to BUILD the artifacts, never to use
+# them.
+pipeline = [
+    "polars>=1.0",
+    "duckdb>=1.0",
+    "pyarrow>=16",
+    "optuna>=3.6",
+    "lightgbm>=4.3",
+    "rich>=13",
+]
+# The explanation writer. Pinned below transformers 5 deliberately: 5.14.1
+# segfaults (exit 139) loading a 7B in NF4 on sm_120, across every device_map
+# and quantisation setting tried, while 4.57.6 loads the same weights in 23 s.
+llm = [
+    "torch>=2.6",
+    "transformers>=4.50,<5",
+    "bitsandbytes>=0.45",
+    "accelerate>=1.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["pipeline*"]
+
+[tool.setuptools.package-data]
+pipeline = ["py.typed"]

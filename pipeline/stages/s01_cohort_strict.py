@@ -47,6 +47,18 @@ def main(force: bool = False) -> None:
         SELECT i.subject_id, i.hadm_id, i.stay_id,
                i.first_careunit, i.last_careunit, i.intime, i.outtime, i.los,
                v.vent_start, v.vent_end, v.n_vent_events,
+               -- !! FLAGGED FOR REMOVAL -- this is FUTURE INFORMATION.
+               -- It is the length of the COMPLETED episode, and s02 broadcasts
+               -- it per admission, so every reading carries how long the stay
+               -- will last -- including the first. features.json documents
+               -- `full` as "all at or before t"; this is the exception, and the
+               -- leakage guards miss it because they look for leaky_ prefixes
+               -- and forward-label columns, not whole-stay aggregates.
+               -- Measured: constant in 39,319/39,319 stays; serving the causal
+               -- form instead moves the displayed band on 7.95% of readings.
+               -- See FINDINGS.md 7.1 and reports/tool_causal_parity.json.
+               -- Left in place because training is finalised. At the next
+               -- retrain use elapsed hours at t, which is what serving uses.
                date_diff('hour', v.vent_start, v.vent_end) AS vent_hours,
                'strict' AS cohort_source
         FROM icustays i JOIN vent v USING (stay_id)
