@@ -96,6 +96,49 @@ class Generator:
         return self.tokenizer.decode(out[0][n_in:], skip_special_tokens=True).strip()
 
 
+def vram_status() -> dict:
+    """Free and total VRAM, from the driver rather than from CUDA's view of it.
+
+    ⚠️ `torch.cuda.mem_get_info()` reports what the CUDA runtime believes a new
+    allocation could get, which on this WDDM setup is not what the device
+    actually has free. Measured 2026-08-19 with the 7B already resident:
+
+        nvidia-smi   260 MiB free of 8151
+        torch       6759 MiB free of 8151
+
+    A 6.3 GB disagreement, and torch is the optimistic one. That is precisely how
+    a preflight passes and the load then segfaults -- `s19_generate` gates on
+    `vram_free_gb > 5.5`, which torch would have cleared with a quarter of a
+    gigabyte actually available. NVML talks to the driver; CUDA talks to its own
+    bookkeeping. Prefer the driver, and say which one answered.
+
+    Totals agree exactly and always did: 8151 MiB is 7.96 GiB is 8.55 decimal GB.
+    The card is an 8 GB card; every other figure in the notes was that same
+    number with its units mangled.
+    """
+    import shutil
+    import subprocess
+
+    exe = shutil.which("nvidia-smi")
+    if exe:
+        try:
+            raw = subprocess.run(
+                [exe, "--query-gpu=memory.total,memory.free",
+                 "--format=csv,noheader,nounits"],
+                capture_output=True, text=True, timeout=10, check=True).stdout
+            total_mib, free_mib = (int(v) for v in raw.splitlines()[0].split(","))
+            return {"free_mib": free_mib, "total_mib": total_mib, "source": "nvidia-smi"}
+        except Exception:  # noqa: BLE001
+            pass  # fall through -- an unreadable driver is not a reason to stop
+
+    import torch
+    free, total = torch.cuda.mem_get_info()
+    return {"free_mib": round(free / 1024**2), "total_mib": round(total / 1024**2),
+            # Named so it shows up in the report: this number is the optimistic
+            # one, and a reader should know the driver was not available.
+            "source": "torch.cuda.mem_get_info (nvidia-smi unavailable)"}
+
+
 def capability_check() -> dict:
     """The cheap check the stage runs every time: is the toolchain present and
     is there room?
@@ -130,9 +173,15 @@ def capability_check() -> dict:
             f"HF_HUB_CACHE) explicitly before importing transformers.")
 
     p = torch.cuda.get_device_properties(0)
-    free, total = torch.cuda.mem_get_info()
+    # From the driver, not from CUDA's bookkeeping -- see `vram_status`. The
+    # `_gb` keys keep their names and decimal-GB units because `s19_generate`
+    # gates on `vram_free_gb`; what changed is that they are now true.
+    vram = vram_status()
     out = {"gpu": p.name, "compute_capability": f"sm_{p.major}{p.minor}",
-           "vram_free_gb": round(free / 1e9, 2), "vram_total_gb": round(total / 1e9, 2),
+           "vram_free_gb": round(vram["free_mib"] * 1024**2 / 1e9, 2),
+           "vram_total_gb": round(vram["total_mib"] * 1024**2 / 1e9, 2),
+           "vram_free_mib": vram["free_mib"], "vram_total_mib": vram["total_mib"],
+           "vram_source": vram["source"],
            "hub_cache": str(hub),
            "quantisation": C.LLM_QUANT, "torch": torch.__version__}
     if C.LLM_QUANT != "none":
