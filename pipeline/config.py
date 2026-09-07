@@ -156,6 +156,7 @@ RPT_TOOL_ABLATION = REPORTS / "tool_method_ablation.json"
 RPT_TOOL_GATE_PIVOT = REPORTS / "tool_gate_pivot.json"
 RPT_TOOL_TARGETS = REPORTS / "tool_target_candidates.json"
 RPT_TOOL_CAUSAL_PARITY = REPORTS / "tool_causal_parity.json"
+RPT_TOOL_VRAM_PROBE = REPORTS / "tool_vram_probe.json"
 
 # --------------------------------------------------------------------------
 # Keep every temporary file on D:. The C: drive is tight (~13 GB), and a
@@ -604,6 +605,53 @@ LLM_MODEL_ID = os.getenv("PM_LLM_MODEL", "Qwen/Qwen2.5-7B-Instruct")
 LLM_REVISION = os.getenv("PM_LLM_REVISION", "main")
 LLM_QUANT = os.getenv("PM_LLM_QUANT", "nf4")          # nf4 | none
 LLM_PREFLIGHT_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"    # ~350 MB toolchain probe
+# WHERE THE EMBEDDING TABLE LIVES ONCE LOADED.
+#
+# This model unties its embeddings (`tie_word_embeddings: false`) over a 152,064
+# token vocabulary, so `embed_tokens` and `lm_head` are 545 M parameters EACH and
+# bitsandbytes quantises neither -- `nn.Embedding` is not `nn.Linear`, and an
+# untied `lm_head` is what `get_keys_to_not_convert` returns. 1040 MiB apiece, in
+# 16-bit, on the scarcest resource in the machine. Only the embedding is a
+# candidate to move: `lm_head` runs a 152,064-way matmul every decode step.
+#
+# ⚠️ `cpu` PAYS, BUT NOT WHERE IT LOOKS LIKE IT DOES. Moving the table frees
+# 1039 MiB in torch's books and returns only 130 MiB to the driver -- the rest is
+# a hole inside a partially-used segment, and `empty_cache()` cannot hand that
+# back without `expandable_segments`, a no-op on Windows. Measured 2026-09-07:
+#
+#   after load          driver_free=1022  alloc=5309  reserved=6050
+#   after emb.to(cpu)   driver_free=1024  alloc=4270  reserved=6050
+#   after empty_cache   driver_free=1154  alloc=4270  reserved=5920
+#
+# Read straight after the load that says "130 MiB, not worth it". It is the wrong
+# place to read. The 909 MiB stays as REUSABLE ARENA: generation allocates its KV
+# cache and activations inside it instead of asking the driver for new segments,
+# so the card ends a generation with room on it. Three loads each way:
+#
+#                 free after generation        generation
+#   embed=cuda     119 /  97 / 117 MiB     25.6 / 17.8 / 21.6 s
+#   embed=cpu      770 / 692 / 678 MiB     14.4 / 13.2 / 13.3 s
+#
+# ~600 MiB more headroom and generation 37% faster, because generation time swings
+# ~5x with what is left on the card and this is what leaves something on it. Output
+# is byte-identical across both placements -- one sha256 over six runs -- which is
+# what makes the swap free rather than a quality trade.
+#
+# ⚠️ It does NOT move the load PEAK, so it does not lower the VRAM gate: the table
+# is on the card while `from_pretrained` runs whatever happens to it afterwards.
+LLM_EMBED_DEVICE = os.getenv("PM_LLM_EMBED_DEVICE", "cpu")   # cpu | cuda
+#: Free VRAM the 7B needs, from the DRIVER, before a load may start. One
+#: definition, two readers: `s19_generate`'s capability check and the demo
+#: service's `explanation.generator()`. It lived in the demo service alone until
+#: 2026-09-07, which left the pipeline stage asserting `vram_free_gb > 5.5` --
+#: a figure that had drifted below a level already known to segfault.
+#:
+#: MEASURED, not bracketed. `tools/vram_probe.py` samples the driver at 5 Hz
+#: across the load; three consecutive runs peaked at 6059, 6171 and 6239 MiB,
+#: spread 180. 6420 = max peak + spread. The full table, the accepted risk and
+#: the reason the peak does not move with LLM_EMBED_DEVICE are on
+#: `MIN_FREE_VRAM_MIB` in `pulsemind_demo/back-end/pythonService/explanation.py`.
+LLM_MIN_FREE_VRAM_MIB = 6420
 LLM_MAX_NEW_TOKENS = 220
 # Greedy, fixed seed. Non-determinism would make a prompt change unattributable,
 # and attributing changes is the entire purpose of the grounding checker.

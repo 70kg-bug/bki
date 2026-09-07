@@ -145,10 +145,19 @@ def _run(sample: int | None = None, with_evidence: bool = True) -> None:
         # context and fragmented segments behind, and the 7B load then fails on
         # fragmentation rather than capacity -- which is exactly what happened.
         # The full probe is `--preflight`, a separate command and process.
-        assert pf["vram_free_gb"] > 5.5, (
-            f"only {pf['vram_free_gb']:.2f} GB VRAM free; a 7B in NF4 needs a "
-            f"~4.8 GB block plus activations. Close whatever is holding the GPU, "
-            f"or set PM_LLM_QUANT=none with a 3B model.")
+        #
+        # MEASURED, in the same unit the driver reports. The old form asserted
+        # `vram_free_gb > 5.5`, written when the figure came from
+        # `torch.cuda.mem_get_info()` and was optimistic by gigabytes; once
+        # `vram_status()` started telling the truth, 5.5 GB (5245 MiB) sat well
+        # BELOW a level that had already segfaulted, so the gate protected
+        # nothing. The peak is now 6239 MiB across three runs -- see
+        # `tools/vram_probe.py` and `reports/tool_vram_probe.json`.
+        assert pf["vram_free_mib"] >= C.LLM_MIN_FREE_VRAM_MIB, (
+            f"only {pf['vram_free_mib']} MiB VRAM free of "
+            f"{pf['vram_total_mib']}; the 7B peaks at ~6239 MiB and this stage "
+            f"needs {C.LLM_MIN_FREE_VRAM_MIB}. Close whatever is holding the GPU, or "
+            f"set PM_LLM_QUANT=none with a 3B model.")
 
     with stage(f"Load {C.LLM_MODEL_ID}"):
         gen = G.load_generator()
