@@ -146,12 +146,8 @@ def _run(sample: int | None = None, with_evidence: bool = True) -> None:
         # fragmentation rather than capacity -- which is exactly what happened.
         # The full probe is `--preflight`, a separate command and process.
         #
-        # MEASURED, in the same unit the driver reports. The old form asserted
-        # `vram_free_gb > 5.5`, written when the figure came from
-        # `torch.cuda.mem_get_info()` and was optimistic by gigabytes; once
-        # `vram_status()` started telling the truth, 5.5 GB (5245 MiB) sat well
-        # BELOW a level that had already segfaulted, so the gate protected
-        # nothing. The peak is now 6239 MiB across three runs -- see
+        # MEASURED, in MiB and from the driver -- the same unit and source the
+        # gate compares against. Peak 6239 MiB across three runs; evidence in
         # `tools/vram_probe.py` and `reports/tool_vram_probe.json`.
         assert pf["vram_free_mib"] >= C.LLM_MIN_FREE_VRAM_MIB, (
             f"only {pf['vram_free_mib']} MiB VRAM free of "

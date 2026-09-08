@@ -8,9 +8,6 @@ value chosen inside that band is "slightly optimistic". Nobody had watched the
 card DURING a load, so the peak had never been measured, only inferred from
 whether the process survived.
 
-That is an expensive way to learn a number. Each observation costs a 40 s load
-and roughly half of them are crashes.
-
 WHAT IT MEASURES, AND WHY IN THAT UNIT
 --------------------------------------
 `peak = free_before - min(free) observed across the run`, sampled from
@@ -276,7 +273,9 @@ def main(runs: int = 5, sample: int = 4, record_index: int = 0,
         # before/after text comparison is void.
         "text_sha256": hashes,
         "deterministic": len(hashes) == 1 if hashes else None,
-        "gate_now_mib": 6700,
+        # Read, never hardcoded -- a probe that reports a stale gate beside a
+        # fresh peak is worse than one that reports no gate at all.
+        "gate_now_mib": C.LLM_MIN_FREE_VRAM_MIB,
         "runs": rows,
     }
     if peaks:
