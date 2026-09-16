@@ -86,12 +86,12 @@ These are documented so nobody loses an afternoon to them:
 
 ## A note on `data/updated_cleaned_training_data/`
 
-Those files are per-patient extracts derived from **MIMIC-IV**, which is distributed under a
-PhysioNet Data Use Agreement and may not be redistributed. They remain on disk but are **no
-longer tracked** by git, and the path is in `../.gitignore`.
+Those files were per-patient extracts derived from **MIMIC-IV**, which is distributed under a
+PhysioNet Data Use Agreement and may not be redistributed. They were untracked (the path is in
+`../.gitignore`) and were **deleted from disk on 2026-09-16**; the folder no longer exists.
 
-Untracking stops further distribution; it does **not** remove them from existing history. If
-that matters for your use, that is a separate, deliberate history rewrite.
+Deleting them does **not** remove them from existing history. If that matters for your use,
+that is a separate, deliberate history rewrite.
 
 ---
 

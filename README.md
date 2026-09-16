@@ -44,6 +44,11 @@ hardcodes one.
 
 ## Running the pipeline
 
+⚠️ **Nothing below runs on the dev box right now.** The MIMIC-IV tree and `build/` were deleted
+on 2026-09-16 now that the project is moving to a different dataset, so `run_all` stops in
+`config.require_mimic()` naming all ten source tables. Point `PM_DATA_ROOT` at a source tree and
+the commands work unchanged; every measured result is already in `reports/`.
+
 Python 3.12, PyTorch cu128 (the dev box is an RTX 5060, Blackwell `sm_120`). From this
 directory:
 
@@ -94,4 +99,6 @@ more than that headline, all in [`reports/FINDINGS.md`](reports/FINDINGS.md):
 **MIMIC-IV is credentialed data under a PhysioNet Data Use Agreement and must not be
 committed here.** That covers the raw tables, BigQuery exports, and per-patient extracts
 derived from them. `.gitignore` enforces this; `legacy/data/updated_cleaned_training_data/`
-was untracked for exactly this reason and remains only on local disk.
+was untracked for exactly this reason and was deleted from disk on 2026-09-16, along with the
+workspace's whole MIMIC extract and every artifact built from it. Deleting does not purge
+either from history already pushed.
